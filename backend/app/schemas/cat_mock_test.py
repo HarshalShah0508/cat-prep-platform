@@ -85,6 +85,7 @@ class SectionBreakdown(BaseModel):
 class ResultQuestionOut(BaseModel):
     id: int
     order_index: int
+    section: Optional[str] = None
     question_text: str
     options: Optional[List[str]] = None
     correct_answer: str

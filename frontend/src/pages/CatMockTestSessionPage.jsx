@@ -47,13 +47,20 @@ export default function CatMockTestSessionPage() {
 
   const effectiveStatus = trackedSessionId === sessionId ? trackedStatus : null
 
-  const sections = useMemo(() => {
-    if (!test?.sections) return []
-    return SECTION_ORDER.filter((s) => test.sections[s])
+  // Backend returns sections as a list (e.g. [{section: "QA", questions: [...]}]),
+  // not a dict keyed by section name.
+  const sectionsMap = useMemo(() => {
+    const map = {}
+    for (const s of test?.sections ?? []) map[s.section] = s
+    return map
   }, [test])
 
+  const sections = useMemo(() => {
+    return SECTION_ORDER.filter((s) => sectionsMap[s])
+  }, [sectionsMap])
+
   const currentSection = sections[sectionIndex]
-  const currentSectionData = currentSection ? test.sections[currentSection] : null
+  const currentSectionData = currentSection ? sectionsMap[currentSection] : null
 
   // Load the full test once it's ready (or already in progress).
   useEffect(() => {

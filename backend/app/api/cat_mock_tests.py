@@ -221,6 +221,7 @@ def get_mock_test_results(
             ResultQuestionOut(
                 id=mtq.id,
                 order_index=mtq.order_index,
+                section=section,
                 question_text=data.get("question_text") or "",
                 options=data.get("options"),
                 correct_answer=data.get("correct_answer") or "",

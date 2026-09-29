@@ -104,7 +104,21 @@ export default function CatMockTestResultsPage() {
   }
   if (!results) return null
 
-  const sectionKeys = SECTION_ORDER.filter((s) => results.sections?.[s])
+  // Backend returns section_breakdown (array of counts) and a flat questions
+  // list (each carrying its own section) rather than a nested sections dict.
+  const questionsBySection = {}
+  for (const q of results.questions ?? []) {
+    const key = q.section || 'UNKNOWN'
+    if (!questionsBySection[key]) questionsBySection[key] = []
+    questionsBySection[key].push(q)
+  }
+
+  const breakdownBySection = {}
+  for (const b of results.section_breakdown ?? []) {
+    breakdownBySection[b.section] = b
+  }
+
+  const sectionKeys = SECTION_ORDER.filter((s) => breakdownBySection[s])
 
   return (
     <div className="page-container">
@@ -122,7 +136,8 @@ export default function CatMockTestResultsPage() {
       </div>
 
       {sectionKeys.map((section) => {
-        const sectionResult = results.sections[section]
+        const sectionResult = breakdownBySection[section]
+        const sectionQuestions = questionsBySection[section] ?? []
         return (
           <div key={section} className="card section-result">
             <h2>{section}</h2>
@@ -138,7 +153,7 @@ export default function CatMockTestResultsPage() {
             />
 
             <div className="question-review-list">
-              {sectionResult.questions?.map((q) => (
+              {sectionQuestions.map((q) => (
                 <QuestionReview key={q.id} question={q} />
               ))}
             </div>
