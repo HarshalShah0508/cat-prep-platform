@@ -8,7 +8,9 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  // Load persisted auth state on first mount.
+  // Load persisted auth state on first mount. If nothing is stored, auto
+  // log in as a fixed dev user (DEV-ONLY: bypasses signup/login while the
+  // rest of the product is being built out — see authApi.devLogin).
   useEffect(() => {
     const storedToken = localStorage.getItem('access_token')
     const storedUser = localStorage.getItem('cat_user')
@@ -16,12 +18,19 @@ export function AuthProvider({ children }) {
       try {
         setToken(storedToken)
         setUser(JSON.parse(storedUser))
+        setLoading(false)
+        return
       } catch {
         localStorage.removeItem('access_token')
         localStorage.removeItem('cat_user')
       }
     }
-    setLoading(false)
+
+    authApi
+      .devLogin()
+      .then((data) => persist(data))
+      .catch(() => {})
+      .finally(() => setLoading(false))
   }, [])
 
   function persist(data) {

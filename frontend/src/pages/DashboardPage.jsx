@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { getDashboard } from '../api/dashboardApi'
+import { getCatProfile } from '../api/catProfileApi'
 
 function StatCard({ label, value }) {
   return (
@@ -28,6 +29,7 @@ export default function DashboardPage() {
   const [data, setData] = useState(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
+  const navigate = useNavigate()
 
   useEffect(() => {
     let cancelled = false
@@ -35,6 +37,11 @@ export default function DashboardPage() {
       setLoading(true)
       setError('')
       try {
+        const profile = await getCatProfile().catch(() => null)
+        if (!profile || !profile.cat_academic_background) {
+          if (!cancelled) navigate('/onboarding', { replace: true })
+          return
+        }
         const result = await getDashboard()
         if (!cancelled) setData(result)
       } catch (err) {
