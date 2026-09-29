@@ -10,9 +10,16 @@ class Settings:
     """Application settings loaded from environment variables (.env)."""
 
     def __init__(self) -> None:
-        self.database_url: str = os.environ.get(
+        raw_database_url = os.environ.get(
             "DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/catprep"
         )
+        # Pin the driver to psycopg2 (the driver installed via requirements.txt) so a bare
+        # "postgresql://" URL doesn't get resolved against a different default dialect.
+        if raw_database_url.startswith("postgresql://"):
+            raw_database_url = raw_database_url.replace(
+                "postgresql://", "postgresql+psycopg2://", 1
+            )
+        self.database_url: str = raw_database_url
 
         gemini_api_keys_raw = os.environ.get("GEMINI_API_KEYS")
         if not gemini_api_keys_raw:
