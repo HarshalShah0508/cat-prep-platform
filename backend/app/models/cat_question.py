@@ -1,0 +1,24 @@
+from sqlalchemy import Boolean, Column, DateTime, Integer, JSON, String, Text
+from sqlalchemy.sql import func
+
+from app.database.database import Base
+from app.models.enums import CatQuestionSource, CatQuestionType, CatSection, sa_enum
+
+
+class CatQuestion(Base):
+    __tablename__ = "cat_questions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    section = Column(sa_enum(CatSection, "cat_section"), nullable=False, index=True)
+    question_type = Column(sa_enum(CatQuestionType, "cat_question_type"), nullable=False)
+    topic = Column(String, nullable=False, index=True)
+    difficulty = Column(String, nullable=False)
+    source = Column(sa_enum(CatQuestionSource, "cat_question_source"), nullable=False)
+    source_year = Column(Integer, nullable=True)
+    source_slot = Column(String, nullable=True)
+    question_text = Column(Text, nullable=False)
+    options = Column(JSON, nullable=True)
+    correct_answer = Column(String, nullable=False)
+    explanation = Column(Text, nullable=False)
+    is_active = Column(Boolean, nullable=False, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

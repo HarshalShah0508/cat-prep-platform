@@ -1,0 +1,46 @@
+import { NavLink, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
+
+export default function Navbar() {
+  const { isAuthenticated, user, logout } = useAuth()
+  const navigate = useNavigate()
+
+  if (!isAuthenticated) {
+    return null
+  }
+
+  function handleLogout() {
+    logout()
+    navigate('/login')
+  }
+
+  return (
+    <header className="navbar">
+      <div className="navbar-inner">
+        <NavLink to="/dashboard" className="navbar-brand">
+          CAT<span className="navbar-brand-accent">Prep</span>
+        </NavLink>
+        <nav className="navbar-links">
+          <NavLink to="/dashboard" className={({ isActive }) => (isActive ? 'active' : '')}>
+            Dashboard
+          </NavLink>
+          <NavLink to="/mock-tests/new" className={({ isActive }) => (isActive ? 'active' : '')}>
+            Mock Tests
+          </NavLink>
+          <NavLink to="/pi" className={({ isActive }) => (isActive ? 'active' : '')}>
+            PI Practice
+          </NavLink>
+          <NavLink to="/weak-concepts" className={({ isActive }) => (isActive ? 'active' : '')}>
+            Weak Concepts
+          </NavLink>
+        </nav>
+        <div className="navbar-user">
+          {user && <span className="navbar-username">{user.username}</span>}
+          <button type="button" className="btn btn-ghost btn-sm" onClick={handleLogout}>
+            Log out
+          </button>
+        </div>
+      </div>
+    </header>
+  )
+}

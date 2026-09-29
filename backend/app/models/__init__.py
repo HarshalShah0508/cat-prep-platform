@@ -1,0 +1,8 @@
+from app.models.cat_mock_test_question import CatMockTestQuestion  # noqa: F401
+from app.models.cat_mock_test_session import CatMockTestSession  # noqa: F401
+from app.models.cat_pi_session import CatPISession  # noqa: F401
+from app.models.cat_question import CatQuestion  # noqa: F401
+from app.models.cat_weak_concept import CatWeakConcept  # noqa: F401
+from app.models.pi_session_answer import PISessionAnswer  # noqa: F401
+from app.models.pi_session_question import PISessionQuestion  # noqa: F401
+from app.models.user import User  # noqa: F401
