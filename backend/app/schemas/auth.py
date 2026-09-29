@@ -12,6 +12,16 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class UserSummary(BaseModel):
+    id: int
+    email: str
+    username: str
+
+    class Config:
+        from_attributes = True
+
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    user: UserSummary
