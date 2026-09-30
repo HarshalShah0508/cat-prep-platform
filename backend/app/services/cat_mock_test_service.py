@@ -12,6 +12,7 @@ from app.models.cat_weak_concept import CatWeakConcept
 from app.models.enums import (
     CatMockTestStatus,
     CatQuestionSource,
+    CatQuestionSourcePreference,
     CatQuestionType,
     CatWeakConceptStatus,
 )
@@ -156,16 +157,20 @@ def assemble_mock_test(
     test_type,
     sections: List[str],
     session: Optional[CatMockTestSession] = None,
+    question_source: str = CatQuestionSourcePreference.MIXED.value,
 ) -> CatMockTestSession:
     """Populate `session` (creating one if not given) with a full set of
-    CatMockTestQuestion rows for each requested section: ~60% pulled from the question bank
-    (weighted toward weak concepts / background-implied weak sections), ~40% freshly
-    generated via Gemini."""
+    CatMockTestQuestion rows for each requested section. `question_source` controls the
+    PYQ-bank / AI-generated mix: "mixed" (default) is ~60% bank / ~40% fresh Gemini
+    generation, weighted toward weak concepts / background-implied weak sections;
+    "pyq_only" pulls entirely from the question bank; "ai_only" generates entirely fresh
+    questions via Gemini, skipping the bank."""
     if session is None:
         session = CatMockTestSession(
             user_id=user.id,
             test_type=test_type,
             sections_included=sections,
+            question_source=question_source,
             status=CatMockTestStatus.GENERATING,
         )
         db.add(session)
@@ -175,11 +180,17 @@ def assemble_mock_test(
     order_index = 0
     for section in sections:
         total_count = SECTION_QUESTION_COUNTS.get(section, 0)
-        bank_count = math.ceil(total_count * BANK_SHARE)
+
+        if question_source == CatQuestionSourcePreference.AI_ONLY.value:
+            bank_count = 0
+        elif question_source == CatQuestionSourcePreference.PYQ_ONLY.value:
+            bank_count = total_count
+        else:
+            bank_count = math.ceil(total_count * BANK_SHARE)
         ai_count = total_count - bank_count
 
-        bank_questions = _pick_bank_questions(db, user, section, bank_count)
-        if len(bank_questions) < bank_count:
+        bank_questions = _pick_bank_questions(db, user, section, bank_count) if bank_count > 0 else []
+        if question_source != CatQuestionSourcePreference.PYQ_ONLY.value and len(bank_questions) < bank_count:
             ai_count += bank_count - len(bank_questions)
 
         for q in bank_questions:
@@ -228,6 +239,79 @@ def assemble_mock_test(
                 )
             )
             order_index += 1
+
+    session.status = CatMockTestStatus.READY
+    db.add(session)
+    db.commit()
+    db.refresh(session)
+    return session
+
+
+def list_available_pyq_papers(db: Session) -> List[dict]:
+    """Distinct (source_year, source_slot) PYQ papers currently in the bank, with a
+    per-section question count for each."""
+    rows = (
+        db.query(
+            CatQuestion.source_year,
+            CatQuestion.source_slot,
+            CatQuestion.section,
+        )
+        .filter(
+            CatQuestion.source == CatQuestionSource.PYQ,
+            CatQuestion.source_year.isnot(None),
+            CatQuestion.source_slot.isnot(None),
+            CatQuestion.is_active.is_(True),
+        )
+        .all()
+    )
+
+    papers: Dict[tuple, Dict[str, int]] = {}
+    for source_year, source_slot, section in rows:
+        key = (source_year, source_slot)
+        section_value = section.value if hasattr(section, "value") else section
+        section_counts = papers.setdefault(key, {})
+        section_counts[section_value] = section_counts.get(section_value, 0) + 1
+
+    return [
+        {"source_year": year, "source_slot": slot, "sections": sections}
+        for (year, slot), sections in sorted(papers.items(), key=lambda item: (-item[0][0], item[0][1]))
+    ]
+
+
+def assemble_pyq_paper(
+    db: Session,
+    session: CatMockTestSession,
+    source_year: int,
+    source_slot: str,
+    sections: Optional[List[str]] = None,
+) -> CatMockTestSession:
+    """Populate `session` with every bank question for one specific real paper
+    (source_year + source_slot), in original order, across the given sections (or every
+    section that has data for that paper if none given). Synchronous - no Gemini calls."""
+    query = db.query(CatQuestion).filter(
+        CatQuestion.source == CatQuestionSource.PYQ,
+        CatQuestion.source_year == source_year,
+        CatQuestion.source_slot == source_slot,
+        CatQuestion.is_active.is_(True),
+    )
+    if sections:
+        query = query.filter(CatQuestion.section.in_(sections))
+
+    questions = query.order_by(CatQuestion.id.asc()).all()
+
+    section_order = list(SECTION_QUESTION_COUNTS.keys())
+    found_sections = sorted({q.section.value for q in questions}, key=lambda s: section_order.index(s))
+    session.sections_included = found_sections
+
+    for order_index, question in enumerate(questions):
+        db.add(
+            CatMockTestQuestion(
+                session_id=session.id,
+                question_id=question.id,
+                order_index=order_index,
+                was_skipped=False,
+            )
+        )
 
     session.status = CatMockTestStatus.READY
     db.add(session)

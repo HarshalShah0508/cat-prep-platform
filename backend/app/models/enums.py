@@ -23,6 +23,13 @@ class CatTestType(str, enum.Enum):
     FULL_MOCK = "full_mock"
     SECTIONAL = "sectional"
     TOPIC_DRILL = "topic_drill"
+    PYQ_PAPER = "pyq_paper"
+
+
+class CatQuestionSourcePreference(str, enum.Enum):
+    MIXED = "mixed"
+    PYQ_ONLY = "pyq_only"
+    AI_ONLY = "ai_only"
 
 
 class CatMockTestStatus(str, enum.Enum):

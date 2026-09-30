@@ -1,9 +1,14 @@
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, JSON
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, JSON, String
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from app.database.database import Base
-from app.models.enums import CatMockTestStatus, CatTestType, sa_enum
+from app.models.enums import (
+    CatMockTestStatus,
+    CatQuestionSourcePreference,
+    CatTestType,
+    sa_enum,
+)
 
 
 class CatMockTestSession(Base):
@@ -13,6 +18,14 @@ class CatMockTestSession(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     test_type = Column(sa_enum(CatTestType, "cat_test_type"), nullable=False)
     sections_included = Column(JSON, nullable=False)
+    question_source = Column(
+        sa_enum(CatQuestionSourcePreference, "cat_question_source_preference"),
+        nullable=False,
+        default=CatQuestionSourcePreference.MIXED,
+    )
+    # Only set for test_type=pyq_paper - which exact paper this session replays.
+    pyq_source_year = Column(Integer, nullable=True)
+    pyq_source_slot = Column(String, nullable=True)
     status = Column(
         sa_enum(CatMockTestStatus, "cat_mock_test_status"),
         nullable=False,

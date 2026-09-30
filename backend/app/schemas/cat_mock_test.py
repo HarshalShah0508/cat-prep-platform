@@ -7,6 +7,7 @@ from pydantic import BaseModel
 class MockTestStartRequest(BaseModel):
     test_type: str
     sections: List[str]
+    question_source: str = "mixed"
 
 
 class MockTestStartResponse(BaseModel):
@@ -43,6 +44,9 @@ class MockTestDetailResponse(BaseModel):
     id: int
     test_type: str
     status: str
+    question_source: Optional[str] = None
+    pyq_source_year: Optional[int] = None
+    pyq_source_slot: Optional[str] = None
     sections: List[MockTestSectionOut]
     section_started_at: Optional[Dict[str, str]] = None
     section_submitted_at: Optional[Dict[str, str]] = None
@@ -103,6 +107,9 @@ class ResultQuestionOut(BaseModel):
 class MockTestResultsResponse(BaseModel):
     id: int
     status: str
+    test_type: Optional[str] = None
+    pyq_source_year: Optional[int] = None
+    pyq_source_slot: Optional[str] = None
     raw_score: Optional[float] = None
     percentile_estimate: Optional[float] = None
     section_breakdown: List[SectionBreakdown]

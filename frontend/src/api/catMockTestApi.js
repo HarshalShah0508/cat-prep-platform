@@ -2,8 +2,10 @@ import client from './client'
 
 const BASE = '/cat/mock-tests'
 
-export function startMockTest({ test_type, sections }) {
-  return client.post(`${BASE}/start`, { test_type, sections }).then((res) => res.data)
+export function startMockTest({ test_type, sections, question_source }) {
+  return client
+    .post(`${BASE}/start`, { test_type, sections, question_source })
+    .then((res) => res.data)
 }
 
 export function getMockTestStatus(id) {

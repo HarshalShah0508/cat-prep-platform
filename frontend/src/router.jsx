@@ -5,6 +5,7 @@ import SignupPage from './pages/SignupPage'
 import CatOnboardingPage from './pages/CatOnboardingPage'
 import DashboardPage from './pages/DashboardPage'
 import CatMockTestSetupPage from './pages/CatMockTestSetupPage'
+import CatPyqSetupPage from './pages/CatPyqSetupPage'
 import CatMockTestSessionPage from './pages/CatMockTestSessionPage'
 import CatMockTestResultsPage from './pages/CatMockTestResultsPage'
 import CatPiSessionPage from './pages/CatPiSessionPage'
@@ -37,6 +38,14 @@ export default function AppRouter() {
         element={
           <ProtectedRoute>
             <CatMockTestSetupPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/pyq-tests"
+        element={
+          <ProtectedRoute>
+            <CatPyqSetupPage />
           </ProtectedRoute>
         }
       />

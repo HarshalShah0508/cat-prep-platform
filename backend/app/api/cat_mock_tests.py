@@ -79,6 +79,9 @@ def build_mock_test_detail_response(session: CatMockTestSession) -> MockTestDeta
         id=session.id,
         test_type=session.test_type.value,
         status=session.status.value,
+        question_source=session.question_source.value if session.question_source else None,
+        pyq_source_year=session.pyq_source_year,
+        pyq_source_slot=session.pyq_source_slot,
         sections=sections_out,
         section_started_at=session.section_started_at,
         section_submitted_at=session.section_submitted_at,
@@ -96,6 +99,7 @@ def start_mock_test(
         user_id=current_user.id,
         test_type=payload.test_type,
         sections_included=payload.sections,
+        question_source=payload.question_source,
         status=CatMockTestStatus.GENERATING,
     )
     db.add(session)
@@ -255,6 +259,9 @@ def get_mock_test_results(
     return MockTestResultsResponse(
         id=session.id,
         status=session.status.value,
+        test_type=session.test_type.value,
+        pyq_source_year=session.pyq_source_year,
+        pyq_source_slot=session.pyq_source_slot,
         raw_score=session.raw_score,
         percentile_estimate=session.percentile_estimate,
         section_breakdown=section_breakdown,

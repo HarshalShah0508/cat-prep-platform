@@ -10,6 +10,17 @@ import { useCatMockTest } from '../context/CatMockTestContext'
 
 const SECTION_ORDER = ['VARC', 'DILR', 'QA']
 const AUTOSAVE_INTERVAL_MS = 20000
+const SLOT_LABELS = { slot1: 'Slot 1', slot2: 'Slot 2', slot3: 'Slot 3' }
+
+function testTitle(test) {
+  if (test.test_type === 'pyq_paper') {
+    const slot = SLOT_LABELS[test.pyq_source_slot] || test.pyq_source_slot
+    return `CAT ${test.pyq_source_year} · ${slot}`
+  }
+  if (test.test_type === 'full_mock') return 'Full Mock'
+  if (test.test_type === 'topic_drill') return 'Topic Drill'
+  return 'Sectional Test'
+}
 
 function deadlineKey(sessionId, section) {
   return `cat_mock_deadline_${sessionId}_${section}`
@@ -245,7 +256,7 @@ export default function CatMockTestSessionPage() {
       <div className="mock-session-header">
         <div>
           <h1>
-            {test.test_type === 'full_mock' ? 'Full Mock' : test.test_type} — {currentSection}
+            {testTitle(test)} — {currentSection}
           </h1>
           <p className="text-muted">
             Section {sectionIndex + 1} of {sections.length}

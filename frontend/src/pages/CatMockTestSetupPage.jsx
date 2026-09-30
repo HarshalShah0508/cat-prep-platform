@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { startMockTest } from '../api/catMockTestApi'
 import { useCatMockTest } from '../context/CatMockTestContext'
 
@@ -10,6 +10,7 @@ export default function CatMockTestSetupPage() {
   const { trackSession } = useCatMockTest()
   const [testType, setTestType] = useState('full_mock')
   const [sections, setSections] = useState(ALL_SECTIONS)
+  const [questionSource, setQuestionSource] = useState('mixed')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -31,7 +32,11 @@ export default function CatMockTestSetupPage() {
 
     setSubmitting(true)
     try {
-      const data = await startMockTest({ test_type: testType, sections: chosenSections })
+      const data = await startMockTest({
+        test_type: testType,
+        sections: chosenSections,
+        question_source: questionSource,
+      })
       trackSession(data.session_id, data.status)
       navigate(`/mock-tests/${data.session_id}`)
     } catch (err) {
@@ -86,6 +91,46 @@ export default function CatMockTestSetupPage() {
                 <span>Topic drill</span>
               </label>
             </div>
+          </div>
+
+          <div className="form-group">
+            <label>Question source</label>
+            <div className="radio-group">
+              <label className="radio-item">
+                <input
+                  type="radio"
+                  name="questionSource"
+                  value="mixed"
+                  checked={questionSource === 'mixed'}
+                  onChange={() => setQuestionSource('mixed')}
+                />
+                <span>Mixed - PYQs + new AI-generated (Recommended)</span>
+              </label>
+              <label className="radio-item">
+                <input
+                  type="radio"
+                  name="questionSource"
+                  value="pyq_only"
+                  checked={questionSource === 'pyq_only'}
+                  onChange={() => setQuestionSource('pyq_only')}
+                />
+                <span>PYQs only</span>
+              </label>
+              <label className="radio-item">
+                <input
+                  type="radio"
+                  name="questionSource"
+                  value="ai_only"
+                  checked={questionSource === 'ai_only'}
+                  onChange={() => setQuestionSource('ai_only')}
+                />
+                <span>New questions only (AI-generated)</span>
+              </label>
+            </div>
+            <p className="text-muted">
+              Want a specific past paper instead of a shuffled mix? Try{' '}
+              <Link to="/pyq-tests">PYQ Practice</Link>.
+            </p>
           </div>
 
           {testType !== 'full_mock' && (

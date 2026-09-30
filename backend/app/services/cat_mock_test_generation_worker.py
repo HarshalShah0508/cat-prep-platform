@@ -24,7 +24,14 @@ def run(session_id: int) -> None:
             logger.error("Mock test generation worker: user for session_id=%s not found", session_id)
             return
 
-        assemble_mock_test(db, user, session.test_type, session.sections_included, session=session)
+        assemble_mock_test(
+            db,
+            user,
+            session.test_type,
+            session.sections_included,
+            session=session,
+            question_source=session.question_source.value,
+        )
     except Exception:
         logger.exception("Mock test generation failed for session_id=%s", session_id)
         db.rollback()

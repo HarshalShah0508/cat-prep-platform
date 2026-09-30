@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { getMockTestResults } from '../api/catMockTestApi'
 
 const SECTION_ORDER = ['VARC', 'DILR', 'QA']
+const SLOT_LABELS = { slot1: 'Slot 1', slot2: 'Slot 2', slot3: 'Slot 3' }
 
 function SectionBar({ correct, wrong, skipped, ungraded = 0 }) {
   const total = correct + wrong + skipped + ungraded || 1
@@ -128,6 +129,12 @@ export default function CatMockTestResultsPage() {
   return (
     <div className="page-container">
       <h1>Your results</h1>
+      {results.test_type === 'pyq_paper' && (
+        <p className="text-muted">
+          CAT {results.pyq_source_year} &middot;{' '}
+          {SLOT_LABELS[results.pyq_source_slot] || results.pyq_source_slot}
+        </p>
+      )}
 
       <div className="results-summary card">
         <div>
