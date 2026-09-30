@@ -3,14 +3,17 @@ question papers in pyq-source/. Grouped by shared passage via `group_id`;
 `correct_answer`/`explanation` are intentionally left blank for now - the
 answer key is loaded separately once transcribed from the solutions PDFs.
 
-Three sets across the three slots are NOT included here: the source PDFs
-contain a literal "imageXX-XX.png" placeholder instead of the actual chart/
-data image for these sets, so there is no real data to seed from yet
-(Slot 2 Q10-13 research papers, Slot 2 Q14-17 sustainability index, Slot 3
-Q10-13 puzzle competition timings). Slot 1's trade-tariff set (Q10-13) WAS
-originally skipped for the same reason but is now included below - the
-user supplied the actual chart images afterward, cross-checked against the
-official solutions PDF.
+Two sets are NOT included here: the source PDFs contain a literal
+"imageXX-XX.png" placeholder instead of the actual chart/data image for
+these sets, so there is no real data to seed from yet (Slot 2 Q10-13
+research papers, Slot 2 Q14-17 sustainability index). Slot 1's trade-tariff
+set and Slot 3's puzzle-competition set were originally skipped for the
+same reason but are now included below - the user supplied the actual
+chart images afterward. Slot 1's was cross-checked against the official
+solutions PDF; Slot 3's had no solutions PDF available for this specific
+set, so its step-chart breakpoints are a careful visual read, validated by
+running the puzzle-type-sequence logic on the data and confirming it
+independently reproduces two of that set's own printed answer options.
 
 Run with:
     python -m app.scripts.seed_cat_pyq_2025_dilr
@@ -22,7 +25,7 @@ from app.models.cat_question import CatQuestion
 SOURCE_YEAR = 2025
 
 
-def q(group_id, slot, topic, qtype, text, options=None):
+def q(group_id, slot, topic, qtype, text, options=None, chart_data=None):
     return {
         "section": "DILR",
         "question_type": qtype,
@@ -34,6 +37,7 @@ def q(group_id, slot, topic, qtype, text, options=None):
         "group_id": group_id,
         "question_text": text,
         "options": options,
+        "chart_data": chart_data,
     }
 
 
@@ -439,9 +443,70 @@ QUESTIONS += [
           "Jano spent 2000 in Cyrenia", "Lian spent 2000 in Cyrenia"]), "passage_text": _passage},
 ]
 
-# Slot 3 Q10-13 (puzzle competition step-line charts) SKIPPED - exact per-minute
-# values aren't reliably readable from the source image, so no confident data
-# to seed from.
+_g = "cat2025_slot3_set3"
+_STEP_COLORS = {
+    "Anirbid": "#dc2626",
+    "Chandranath": "#d97706",
+    "Koushik": "#16a34a",
+    "Suranjan": "#2563eb",
+}
+_ALL_PUZZLES_POINTS = {
+    "Anirbid": [[0, 0], [4, 1], [9, 2], [11, 3], [14, 4], [16, 5], [22, 6], [26, 7], [29, 8], [33, 9], [37, 10], [40, 10]],
+    "Chandranath": [[0, 0], [4, 1], [6, 2], [8, 3], [13, 4], [14, 5], [21, 6], [25, 7], [27, 8], [29, 9], [30, 10], [40, 10]],
+    "Koushik": [[0, 0], [2, 1], [5, 2], [7, 3], [12, 4], [14, 5], [16, 6], [19, 7], [25, 8], [29, 9], [31, 10], [40, 10]],
+    "Suranjan": [[0, 0], [4, 1], [9, 2], [12, 3], [18, 4], [19, 5], [23, 6], [25, 7], [27, 8], [33, 9], [35, 10], [40, 10]],
+}
+_VISUAL_PUZZLES_POINTS = {
+    "Anirbid": [[0, 0], [4, 1], [14, 2], [28, 3], [33, 4], [40, 4]],
+    "Chandranath": [[0, 0], [4, 1], [13, 2], [26, 3], [28, 4], [40, 4]],
+    "Koushik": [[0, 0], [2, 1], [12, 2], [25, 3], [29, 4], [40, 4]],
+    "Suranjan": [[0, 0], [5, 1], [18, 2], [28, 3], [33, 4], [40, 4]],
+}
+_chart_data = [
+    {
+        "title": "All puzzles",
+        "x_label": "Time (minutes)",
+        "y_label": "Number of puzzles solved",
+        "x_max": 40,
+        "y_max": 10,
+        "series": [{"name": n, "color": _STEP_COLORS[n], "points": p} for n, p in _ALL_PUZZLES_POINTS.items()],
+    },
+    {
+        "title": "Visual puzzles",
+        "x_label": "Time (minutes)",
+        "y_label": "Number of visual puzzles solved",
+        "x_max": 40,
+        "y_max": 5,
+        "series": [{"name": n, "color": _STEP_COLORS[n], "points": p} for n, p in _VISUAL_PUZZLES_POINTS.items()],
+    },
+]
+_passage = (
+    "Anirbid, Chandranath, Koushik, and Suranjan participated in a puzzle solving "
+    "competition. The competition comprised 10 puzzles that had to be solved in the "
+    "same sequence, i.e., a competitor got access to a puzzle as soon as they solved "
+    "the previous puzzle. Some of the puzzles were visual puzzles and the others were "
+    "number-based puzzles. The winner of the competition was the one who solved all "
+    "puzzles in the least time. The chart on the left shows the cumulative number of "
+    "puzzles solved by each competitor at a given time (in minutes) after the start of "
+    "the competition. The chart on the right shows the cumulative number of visual "
+    "puzzles solved by each competitor over the same period."
+)
+QUESTIONS += [
+    {**q(_g, _slot, "Puzzle Competition Step-Chart DI", "MCQ",
+         "Who had solved the largest number of puzzles by the 20-th minute from the "
+         "start of the competition?",
+         ["Chandranath", "Koushik", "Anirbid", "Suranjan"], chart_data=_chart_data), "passage_text": _passage},
+    {**q(_g, _slot, "Puzzle Competition Step-Chart DI", "TITA",
+         "How many minutes did Suranjan take to solve the third visual puzzle in the "
+         "competition?", chart_data=_chart_data), "passage_text": _passage},
+    {**q(_g, _slot, "Puzzle Competition Step-Chart DI", "TITA",
+         "At what number in the sequence was the fourth number-based puzzle?",
+         chart_data=_chart_data), "passage_text": _passage},
+    {**q(_g, _slot, "Puzzle Competition Step-Chart DI", "MCQ",
+         "Which of the following is the closest to the average time taken by Anirbid "
+         "to solve the number-based puzzles in the competition?",
+         ["3.3 minutes", "2.5 minutes", "4.0 minutes", "3.8 minutes"], chart_data=_chart_data), "passage_text": _passage},
+]
 
 _g = "cat2025_slot3_set4"
 # NOTE: table transcribed from a small rendered image - double-check against
@@ -548,6 +613,7 @@ def seed() -> None:
                     source_slot=item["source_slot"],
                     group_id=item["group_id"],
                     passage_text=item["passage_text"],
+                    chart_data=item.get("chart_data"),
                     question_text=item["question_text"],
                     options=item["options"],
                     correct_answer=None,

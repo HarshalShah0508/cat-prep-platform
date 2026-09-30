@@ -722,3 +722,76 @@ textarea {
     gap: 0.75rem;
   }
 }
+
+/* Step charts (rendered DI graph data) */
+.step-chart-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin: 0.75rem 0 1rem;
+}
+
+.step-chart {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  width: 100%;
+}
+
+.step-chart-title {
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.step-chart-svg {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.step-chart-gridline {
+  stroke: var(--color-border);
+  stroke-width: 1;
+}
+
+.step-chart-axis {
+  stroke: var(--color-text-muted);
+  stroke-width: 1;
+}
+
+.step-chart-tick {
+  fill: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.step-chart-label {
+  fill: var(--color-text-muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.step-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--color-text);
+}
+
+.step-chart-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.step-chart-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+}

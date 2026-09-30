@@ -28,6 +28,7 @@ class MockTestQuestionOut(BaseModel):
     difficulty: Optional[str] = None
     group_id: Optional[str] = None
     passage_text: Optional[str] = None
+    chart_data: Optional[list] = None
     question_text: str
     options: Optional[List[str]] = None
     selected_answer: Optional[str] = None
@@ -95,6 +96,7 @@ class ResultQuestionOut(BaseModel):
     section: Optional[str] = None
     group_id: Optional[str] = None
     passage_text: Optional[str] = None
+    chart_data: Optional[list] = None
     question_text: str
     options: Optional[List[str]] = None
     correct_answer: Optional[str] = None

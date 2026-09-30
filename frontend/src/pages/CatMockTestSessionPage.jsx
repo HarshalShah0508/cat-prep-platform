@@ -7,6 +7,7 @@ import {
   submitMockTest,
 } from '../api/catMockTestApi'
 import { useCatMockTest } from '../context/CatMockTestContext'
+import StepChart from '../components/StepChart'
 
 const SECTION_ORDER = ['VARC', 'DILR', 'QA']
 const AUTOSAVE_INTERVAL_MS = 20000
@@ -281,6 +282,7 @@ export default function CatMockTestSessionPage() {
                     <span className="badge">Comprehension</span>
                   </div>
                   <p className="passage-text">{q.passage_text}</p>
+                  <StepChart charts={q.chart_data} />
                 </div>
               )}
               <div className="card question-card">

@@ -17,6 +17,11 @@ class CatQuestion(Base):
     source_year = Column(Integer, nullable=True)
     source_slot = Column(String, nullable=True)
     passage_text = Column(Text, nullable=True)
+    # Structured chart data for DI sets where the source is a graph rather than a
+    # table (e.g. step-line charts) - a list of {title, x_label, y_label, series:
+    # [{name, color, points: [[x,y], ...]}]} objects, rendered client-side instead
+    # of embedding a copied chart image.
+    chart_data = Column(JSON, nullable=True)
     group_id = Column(String, nullable=True, index=True)
     question_text = Column(Text, nullable=False)
     options = Column(JSON, nullable=True)
