@@ -3,17 +3,18 @@ question papers in pyq-source/. Grouped by shared passage via `group_id`;
 `correct_answer`/`explanation` are intentionally left blank for now - the
 answer key is loaded separately once transcribed from the solutions PDFs.
 
-Two sets are NOT included here: the source PDFs contain a literal
-"imageXX-XX.png" placeholder instead of the actual chart/data image for
-these sets, so there is no real data to seed from yet (Slot 2 Q10-13
-research papers, Slot 2 Q14-17 sustainability index). Slot 1's trade-tariff
-set and Slot 3's puzzle-competition set were originally skipped for the
-same reason but are now included below - the user supplied the actual
-chart images afterward. Slot 1's was cross-checked against the official
-solutions PDF; Slot 3's had no solutions PDF available for this specific
-set, so its step-chart breakpoints are a careful visual read, validated by
-running the puzzle-type-sequence logic on the data and confirming it
-independently reproduces two of that set's own printed answer options.
+All three slots are now complete (22/22 DILR questions each). Four sets
+originally had no data because their source PDFs contained a literal
+"imageXX-XX.png" placeholder instead of the actual chart/data image; the
+user supplied the real chart images afterward for all four (Slot 1's
+trade-tariff radar+bar charts, Slot 2's research-papers and sustainability-
+index charts, Slot 3's puzzle-competition step charts). Slot 1's data was
+cross-checked against its official solutions PDF; Slot 2's charts were
+precisely readable directly (bar/scatter charts with clear gridlines, one
+internal total cross-check passed); Slot 3's step-chart breakpoints are a
+careful visual read validated by confirming the puzzle-type-sequence logic
+run on the data independently reproduces two of that set's own printed
+answer options.
 
 Run with:
     python -m app.scripts.seed_cat_pyq_2025_dilr
@@ -311,9 +312,105 @@ QUESTIONS += [
          "state they belong to?"), "passage_text": _passage},
 ]
 
-# Slot 2 Q10-13 (research papers chart) and Q14-17 (sustainability index scatter
-# plot) SKIPPED - source PDF has literal "imageXX-XX.png" placeholders instead
-# of the actual chart images; no data available to seed from.
+_g = "cat2025_slot2_set3"
+_passage = (
+    "The following charts depict details of research papers written by four authors, "
+    "Arman, Brajen, Chintan, and Devon. The papers were of four types, single-author, "
+    "two-author, three-author, and four-author, that is, written by one, two, three, "
+    "or all four of these authors, respectively. No other authors were involved in "
+    "writing these papers.\n\n"
+    "The following additional facts are known.\n"
+    "1. Each of the authors wrote at least one of each of the four types of papers.\n"
+    "2. The four authors wrote different numbers of single-author papers.\n"
+    "3. Both Chintan and Devon wrote more three-author papers than Brajen.\n"
+    "4. The number of single-author and two-author papers written by Brajen were the "
+    "same."
+)
+_chart_data = [
+    {
+        "type": "bar",
+        "title": "Number of papers by each author",
+        "x_label": "Author",
+        "y_label": "Number of papers",
+        "categories": ["Arman", "Brajen", "Chintan", "Devon"],
+        "values": [5, 8, 12, 10],
+        "y_max": 14,
+        "color": "#4338ca",
+    },
+    {
+        "type": "bar",
+        "title": "Number of papers by type",
+        "x_label": "Paper type",
+        "y_label": "Number of papers",
+        "categories": ["Single-author", "Two-author", "Three-author", "Four-author"],
+        "values": [10, 4, 3, 2],
+        "y_max": 12,
+        "color": "#0f9d8b",
+    },
+]
+QUESTIONS += [
+    {**q(_g, _slot, "Research Papers by Author/Type Bar Chart DI", "TITA",
+         "What was the total number of two-author and three-author papers written by "
+         "Brajen?", chart_data=_chart_data), "passage_text": _passage},
+    {**q(_g, _slot, "Research Papers by Author/Type Bar Chart DI", "MCQ",
+         "Which of the following statements is/are NECESSARILY true?\n"
+         "i. Chintan wrote exactly three two-author papers.\n"
+         "ii. Chintan wrote more single-author papers than Devon.",
+         ["Neither i nor ii", "Both i and ii", "Only i", "Only ii"], chart_data=_chart_data), "passage_text": _passage},
+    {**q(_g, _slot, "Research Papers by Author/Type Bar Chart DI", "MCQ",
+         "Which of the following statements is/are NECESSARILY true?\n"
+         "i. Arman wrote three-author papers only with Chintan and Devon.\n"
+         "ii. Brajen wrote three-author papers only with Chintan and Devon.",
+         ["Only ii", "Neither i nor ii", "Both i and ii", "Only i"], chart_data=_chart_data), "passage_text": _passage},
+    {**q(_g, _slot, "Research Papers by Author/Type Bar Chart DI", "TITA",
+         "If Devon wrote more than one two-author papers, then how many two-author "
+         "papers did Chintan write?", chart_data=_chart_data), "passage_text": _passage},
+]
+
+_g = "cat2025_slot2_set4"
+_passage = (
+    "The Sustainability Index (SI) of a country at a point in time is an integer "
+    "between 1 and 100. This question is related to SI of six countries - A, B, C, D, "
+    "E, and F - at three different points in time - 2016, 2020, and 2024. The plot "
+    "represents the exact changes in their SI, with X-coordinate representing % "
+    "increase in 2020 from 2016, i.e., (SI in 2020 minus SI in 2016) / (SI in 2016), "
+    "and Y-coordinate representing % increase in 2024 from 2020. At any point in time, "
+    "the country with highest SI is ranked 1, while the country with the lowest SI is "
+    "ranked 6.\n\n"
+    "The following additional facts are known.\n"
+    "1. In 2016, B, C, E, and A had ranks 1, 2, 3, and 4 respectively.\n"
+    "2. F had lower SI than any other country in 2016, 2020, and 2024.\n"
+    "3. In 2024, E was the only country with SI of 90.\n"
+    "4. The range of SI of the six countries was 60 in 2016 as well as in 2024."
+)
+_chart_data = [
+    {
+        "type": "scatter",
+        "title": "% change in Sustainability Index",
+        "x_label": "% increase in index in 2020 from 2016",
+        "y_label": "% increase in index in 2024 from 2020",
+        "x_min": -40, "x_max": 100, "y_min": -30, "y_max": 60,
+        "color": "#1e3a8a",
+        "points": [
+            {"label": "A", "x": 25, "y": 50},
+            {"label": "B", "x": -25, "y": -25},
+            {"label": "C", "x": -20, "y": 40},
+            {"label": "D", "x": 100, "y": 20},
+            {"label": "E", "x": 25, "y": 20},
+            {"label": "F", "x": 100, "y": -25},
+        ],
+    }
+]
+QUESTIONS += [
+    {**q(_g, _slot, "Sustainability Index Scatter Plot DI", "TITA",
+         "What was the SI of E in 2016?", chart_data=_chart_data), "passage_text": _passage},
+    {**q(_g, _slot, "Sustainability Index Scatter Plot DI", "TITA",
+         "What was the SI of F in 2020?", chart_data=_chart_data), "passage_text": _passage},
+    {**q(_g, _slot, "Sustainability Index Scatter Plot DI", "TITA",
+         "What was the SI of C in 2024?", chart_data=_chart_data), "passage_text": _passage},
+    {**q(_g, _slot, "Sustainability Index Scatter Plot DI", "MCQ",
+         "What was the SI of B in 2024?", ["60", "45", "54", "80"], chart_data=_chart_data), "passage_text": _passage},
+]
 
 _g = "cat2025_slot2_set5"
 _passage = (
