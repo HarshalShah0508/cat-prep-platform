@@ -4,27 +4,32 @@ import { getMockTestResults } from '../api/catMockTestApi'
 
 const SECTION_ORDER = ['VARC', 'DILR', 'QA']
 
-function SectionBar({ correct, wrong, skipped }) {
-  const total = correct + wrong + skipped || 1
+function SectionBar({ correct, wrong, skipped, ungraded = 0 }) {
+  const total = correct + wrong + skipped + ungraded || 1
   return (
     <div className="score-bar">
       <div className="score-bar-segment score-bar-correct" style={{ width: `${(correct / total) * 100}%` }} />
       <div className="score-bar-segment score-bar-wrong" style={{ width: `${(wrong / total) * 100}%` }} />
       <div className="score-bar-segment score-bar-skipped" style={{ width: `${(skipped / total) * 100}%` }} />
+      <div className="score-bar-segment score-bar-ungraded" style={{ width: `${(ungraded / total) * 100}%` }} />
     </div>
   )
 }
 
 function QuestionReview({ question }) {
   const [expanded, setExpanded] = useState(false)
+  // PYQs loaded before their answer key was transcribed have no correct_answer
+  // yet, so is_correct comes back null - that's "ungraded", not "incorrect".
+  const ungraded = !question.correct_answer
   const isCorrect = question.is_correct
+  const badgeClass = ungraded ? 'badge-muted' : isCorrect ? 'badge-success' : 'badge-error'
+  const badgeText = ungraded ? 'Answer key pending' : isCorrect ? 'Correct' : 'Incorrect'
+  const cardClass = ungraded ? '' : isCorrect ? 'question-correct' : 'question-incorrect'
 
   return (
-    <div className={`card question-review ${isCorrect ? 'question-correct' : 'question-incorrect'}`}>
+    <div className={`card question-review ${cardClass}`}>
       <button type="button" className="question-review-toggle" onClick={() => setExpanded((e) => !e)}>
-        <span className={`badge ${isCorrect ? 'badge-success' : 'badge-error'}`}>
-          {isCorrect ? 'Correct' : 'Incorrect'}
-        </span>
+        <span className={`badge ${badgeClass}`}>{badgeText}</span>
         <span className="question-review-text">{question.question_text}</span>
         <span className="expand-icon">{expanded ? '−' : '+'}</span>
       </button>
@@ -35,7 +40,7 @@ function QuestionReview({ question }) {
             <ul className="options-list-static">
               {question.options.map((option, idx) => {
                 const isUserAnswer = option === question.selected_answer
-                const isCorrectAnswer = option === question.correct_answer
+                const isCorrectAnswer = !ungraded && option === question.correct_answer
                 let cls = ''
                 if (isCorrectAnswer) cls = 'option-correct'
                 else if (isUserAnswer) cls = 'option-wrong'
@@ -53,7 +58,7 @@ function QuestionReview({ question }) {
             <p>
               <strong>Your answer:</strong> {question.selected_answer || '—'}
               <br />
-              <strong>Correct answer:</strong> {question.correct_answer}
+              <strong>Correct answer:</strong> {ungraded ? 'Pending' : question.correct_answer}
             </p>
           )}
           {question.explanation && (
@@ -145,11 +150,15 @@ export default function CatMockTestResultsPage() {
               <span className="tag tag-correct">{sectionResult.correct} correct</span>
               <span className="tag tag-wrong">{sectionResult.wrong} wrong</span>
               <span className="tag tag-skipped">{sectionResult.skipped} skipped</span>
+              {sectionResult.ungraded > 0 && (
+                <span className="tag tag-muted">{sectionResult.ungraded} answer key pending</span>
+              )}
             </div>
             <SectionBar
               correct={sectionResult.correct}
               wrong={sectionResult.wrong}
               skipped={sectionResult.skipped}
+              ungraded={sectionResult.ungraded}
             />
 
             <div className="question-review-list">

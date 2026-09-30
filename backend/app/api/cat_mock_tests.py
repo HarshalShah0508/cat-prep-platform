@@ -57,6 +57,8 @@ def build_mock_test_detail_response(session: CatMockTestSession) -> MockTestDeta
                 question_type=data.get("question_type"),
                 topic=data.get("topic"),
                 difficulty=data.get("difficulty"),
+                group_id=data.get("group_id"),
+                passage_text=data.get("passage_text"),
                 question_text=data.get("question_text") or "",
                 options=data.get("options"),
                 selected_answer=mtq.selected_answer,
@@ -208,10 +210,15 @@ def get_mock_test_results(
     for mtq in sorted(session.questions, key=lambda q: q.order_index):
         data = cat_mock_test_service.get_question_data(mtq)
         section = data.get("section") or "UNKNOWN"
-        stats = breakdown_map.setdefault(section, {"correct": 0, "wrong": 0, "skipped": 0})
+        stats = breakdown_map.setdefault(
+            section, {"correct": 0, "wrong": 0, "skipped": 0, "ungraded": 0}
+        )
 
         if mtq.was_skipped or mtq.selected_answer is None:
             stats["skipped"] += 1
+        elif mtq.is_correct is None:
+            # Answered, but the question's answer key hasn't been transcribed yet.
+            stats["ungraded"] += 1
         elif mtq.is_correct:
             stats["correct"] += 1
         else:
@@ -222,10 +229,12 @@ def get_mock_test_results(
                 id=mtq.id,
                 order_index=mtq.order_index,
                 section=section,
+                group_id=data.get("group_id"),
+                passage_text=data.get("passage_text"),
                 question_text=data.get("question_text") or "",
                 options=data.get("options"),
-                correct_answer=data.get("correct_answer") or "",
-                explanation=data.get("explanation") or "",
+                correct_answer=data.get("correct_answer"),
+                explanation=data.get("explanation"),
                 selected_answer=mtq.selected_answer,
                 is_correct=mtq.is_correct,
                 marks_awarded=mtq.marks_awarded,
@@ -233,7 +242,13 @@ def get_mock_test_results(
         )
 
     section_breakdown = [
-        SectionBreakdown(section=section, correct=s["correct"], wrong=s["wrong"], skipped=s["skipped"])
+        SectionBreakdown(
+            section=section,
+            correct=s["correct"],
+            wrong=s["wrong"],
+            skipped=s["skipped"],
+            ungraded=s["ungraded"],
+        )
         for section, s in breakdown_map.items()
     ]
 

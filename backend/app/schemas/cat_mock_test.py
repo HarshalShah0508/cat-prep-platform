@@ -25,6 +25,8 @@ class MockTestQuestionOut(BaseModel):
     question_type: Optional[str] = None
     topic: Optional[str] = None
     difficulty: Optional[str] = None
+    group_id: Optional[str] = None
+    passage_text: Optional[str] = None
     question_text: str
     options: Optional[List[str]] = None
     selected_answer: Optional[str] = None
@@ -80,16 +82,19 @@ class SectionBreakdown(BaseModel):
     correct: int
     wrong: int
     skipped: int
+    ungraded: int = 0
 
 
 class ResultQuestionOut(BaseModel):
     id: int
     order_index: int
     section: Optional[str] = None
+    group_id: Optional[str] = None
+    passage_text: Optional[str] = None
     question_text: str
     options: Optional[List[str]] = None
-    correct_answer: str
-    explanation: str
+    correct_answer: Optional[str] = None
+    explanation: Optional[str] = None
     selected_answer: Optional[str] = None
     is_correct: Optional[bool] = None
     marks_awarded: Optional[float] = None

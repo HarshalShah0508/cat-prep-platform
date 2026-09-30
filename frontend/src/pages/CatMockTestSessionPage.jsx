@@ -260,47 +260,59 @@ export default function CatMockTestSessionPage() {
         {currentSectionData.questions.map((q, idx) => {
           const entry = answers[q.id]
           const isTita = q.question_type === 'TITA' || q.question_type === 'tita'
+          const prevGroupId = idx > 0 ? currentSectionData.questions[idx - 1].group_id : null
+          const showPassage = q.passage_text && q.group_id !== prevGroupId
           return (
-            <div key={q.id} className="card question-card">
-              <div className="question-meta">
-                <span>Q{idx + 1}</span>
-                {q.topic && <span className="badge">{q.topic}</span>}
-                {q.difficulty && <span className="badge badge-muted">{q.difficulty}</span>}
-              </div>
-              <p className="question-text">{q.question_text}</p>
-
-              {!isTita && Array.isArray(q.options) ? (
-                <div className="options-list">
-                  {q.options.map((option, optIdx) => (
-                    <label key={optIdx} className="radio-item">
-                      <input
-                        type="radio"
-                        name={`q-${q.id}`}
-                        checked={entry?.selected_answer === option}
-                        onChange={() => setAnswer(q.id, option)}
-                      />
-                      <span>{option}</span>
-                    </label>
-                  ))}
+            <div key={q.id}>
+              {showPassage && (
+                <div className="card passage-card">
+                  <div className="question-meta">
+                    <span className="badge">Comprehension</span>
+                  </div>
+                  <p className="passage-text">{q.passage_text}</p>
                 </div>
-              ) : (
-                <input
-                  type="text"
-                  className="tita-input"
-                  placeholder="Type your answer"
-                  value={entry?.selected_answer ?? ''}
-                  onChange={(e) => setAnswer(q.id, e.target.value)}
-                />
               )}
+              <div className="card question-card">
+                <div className="question-meta">
+                  <span>Q{idx + 1}</span>
+                  {q.topic && <span className="badge">{q.topic}</span>}
+                  {q.difficulty && <span className="badge badge-muted">{q.difficulty}</span>}
+                </div>
+                <p className="question-text">{q.question_text}</p>
 
-              <div className="question-actions">
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-sm"
-                  onClick={() => skipQuestion(q.id)}
-                >
-                  {entry?.was_skipped ? 'Skipped' : 'Mark for review / skip'}
-                </button>
+                {!isTita && Array.isArray(q.options) ? (
+                  <div className="options-list">
+                    {q.options.map((option, optIdx) => (
+                      <label key={optIdx} className="radio-item">
+                        <input
+                          type="radio"
+                          name={`q-${q.id}`}
+                          checked={entry?.selected_answer === option}
+                          onChange={() => setAnswer(q.id, option)}
+                        />
+                        <span>{option}</span>
+                      </label>
+                    ))}
+                  </div>
+                ) : (
+                  <input
+                    type="text"
+                    className="tita-input"
+                    placeholder="Type your answer"
+                    value={entry?.selected_answer ?? ''}
+                    onChange={(e) => setAnswer(q.id, e.target.value)}
+                  />
+                )}
+
+                <div className="question-actions">
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => skipQuestion(q.id)}
+                  >
+                    {entry?.was_skipped ? 'Skipped' : 'Mark for review / skip'}
+                  </button>
+                </div>
               </div>
             </div>
           )

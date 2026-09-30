@@ -390,6 +390,11 @@ textarea {
   color: var(--color-warning);
 }
 
+.tag-muted {
+  background: var(--color-border);
+  color: var(--color-text-muted);
+}
+
 /* Stat cards / dashboard */
 
 .stat-grid {
@@ -490,6 +495,18 @@ textarea {
   margin-bottom: 0;
 }
 
+.passage-card {
+  margin-bottom: 1rem;
+  background: var(--color-bg);
+  border-left: 3px solid var(--color-primary);
+}
+
+.passage-text {
+  font-size: 0.95rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
 .question-meta {
   display: flex;
   gap: 0.5rem;
@@ -560,6 +577,10 @@ textarea {
 
 .score-bar-skipped {
   background: var(--color-warning);
+}
+
+.score-bar-ungraded {
+  background: var(--color-border);
 }
 
 .question-review-list {

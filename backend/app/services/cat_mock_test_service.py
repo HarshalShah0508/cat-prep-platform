@@ -73,6 +73,12 @@ def _weak_topics_for_section(db: Session, user: User, section: str) -> List[str]
 
 
 def _pick_bank_questions(db: Session, user: User, section: str, count: int) -> List[CatQuestion]:
+    """Pick ~`count` bank questions for a section, weighted toward weak concepts /
+    background-implied weak sections. Questions sharing a `group_id` (e.g. a DILR set
+    with one shared passage across 4-6 questions) are always selected and ordered as a
+    whole group - splitting a group would leave the passage's other questions
+    unanswerable, so a chosen group may push the total slightly over `count` rather
+    than being cut short."""
     if count <= 0:
         return []
 
@@ -82,6 +88,7 @@ def _pick_bank_questions(db: Session, user: User, section: str, count: int) -> L
     candidates = (
         db.query(CatQuestion)
         .filter(CatQuestion.section == section, CatQuestion.is_active.is_(True))
+        .order_by(CatQuestion.id.asc())
         .all()
     )
     if not candidates:
@@ -98,7 +105,20 @@ def _pick_bank_questions(db: Session, user: User, section: str, count: int) -> L
             w *= 1.5
         return w
 
-    pool = list(zip(candidates, [weight(q) for q in candidates]))
+    groups: Dict[str, List[CatQuestion]] = {}
+    standalone: List[CatQuestion] = []
+    for q in candidates:
+        if q.group_id:
+            groups.setdefault(q.group_id, []).append(q)
+        else:
+            standalone.append(q)
+
+    # Each "unit" is either a whole group (kept in original order) or a single
+    # standalone question; units are weighted by their average member weight.
+    units: List[List[CatQuestion]] = [members for members in groups.values()] + [[q] for q in standalone]
+    unit_weights = [sum(weight(q) for q in unit) / len(unit) for unit in units]
+
+    pool = list(zip(units, unit_weights))
     random.shuffle(pool)
 
     selected: List[CatQuestion] = []
@@ -112,7 +132,8 @@ def _pick_bank_questions(db: Session, user: User, section: str, count: int) -> L
             if upto >= r:
                 chosen_index = idx
                 break
-        selected.append(pool.pop(chosen_index)[0])
+        unit, _ = pool.pop(chosen_index)
+        selected.extend(unit)
 
     return selected
 
@@ -225,6 +246,8 @@ def get_question_data(mtq: CatMockTestQuestion) -> dict:
             "question_type": q.question_type.value,
             "topic": q.topic,
             "difficulty": q.difficulty,
+            "group_id": q.group_id,
+            "passage_text": q.passage_text,
             "question_text": q.question_text,
             "options": q.options,
             "correct_answer": q.correct_answer,
@@ -236,6 +259,8 @@ def get_question_data(mtq: CatMockTestQuestion) -> dict:
         "question_type": snapshot.get("question_type"),
         "topic": snapshot.get("topic"),
         "difficulty": snapshot.get("difficulty"),
+        "group_id": None,
+        "passage_text": None,
         "question_text": snapshot.get("question_text"),
         "options": snapshot.get("options"),
         "correct_answer": snapshot.get("correct_answer"),
@@ -285,13 +310,18 @@ def score_submission(db: Session, session: CatMockTestSession) -> CatMockTestSes
 
     for mtq in session.questions:
         data = get_question_data(mtq)
-        correct_answer = (data.get("correct_answer") or "").strip().lower()
+        correct_answer_raw = data.get("correct_answer")
         question_type = data.get("question_type")
 
-        if mtq.was_skipped or mtq.selected_answer is None:
+        if not correct_answer_raw:
+            # PYQ loaded before its answer key was transcribed - ungraded, not wrong.
+            mtq.marks_awarded = 0.0
+            mtq.is_correct = None
+        elif mtq.was_skipped or mtq.selected_answer is None:
             mtq.marks_awarded = 0.0
             mtq.is_correct = None
         else:
+            correct_answer = correct_answer_raw.strip().lower()
             is_correct = (mtq.selected_answer or "").strip().lower() == correct_answer
             mtq.is_correct = is_correct
             if is_correct:
