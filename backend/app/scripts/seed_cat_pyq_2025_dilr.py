@@ -3,11 +3,14 @@ question papers in pyq-source/. Grouped by shared passage via `group_id`;
 `correct_answer`/`explanation` are intentionally left blank for now - the
 answer key is loaded separately once transcribed from the solutions PDFs.
 
-Four sets across the three slots are NOT included here: the source PDFs
+Three sets across the three slots are NOT included here: the source PDFs
 contain a literal "imageXX-XX.png" placeholder instead of the actual chart/
 data image for these sets, so there is no real data to seed from yet
-(Slot 1 Q10-13 trade tariffs, Slot 2 Q10-13 research papers, Slot 2 Q14-17
-sustainability index, Slot 3 Q10-13 puzzle competition timings).
+(Slot 2 Q10-13 research papers, Slot 2 Q14-17 sustainability index, Slot 3
+Q10-13 puzzle competition timings). Slot 1's trade-tariff set (Q10-13) WAS
+originally skipped for the same reason but is now included below - the
+user supplied the actual chart images afterward, cross-checked against the
+official solutions PDF.
 
 Run with:
     python -m app.scripts.seed_cat_pyq_2025_dilr
@@ -112,8 +115,66 @@ QUESTIONS += [
          ["Neither I nor II", "Both I and II", "Only I", "Only II"]), "passage_text": _passage},
 ]
 
-# Slot 1 Q10-13 (trade tariffs, radar + bar chart) SKIPPED - source PDF has no
-# transcribable chart data for the exact percentages/volumes needed to solve.
+_g = "cat2025_slot1_set3"
+# Radar/bar chart data cross-checked against the official solutions PDF: plain
+# values are exact (either stated directly in the original passage/solution,
+# or the unique combination the solution's worked answer requires); "~"
+# marks a value the solution itself only reads approximately off the chart.
+_passage = (
+    "Five countries engage in trade with each other. Each country levies import "
+    "tariffs on the other countries. The import tariff levied by Country X on "
+    "Country Y is calculated by multiplying the corresponding tariff percentage "
+    "with the total imports of Country X from Country Y. The radar chart below "
+    "depicts different import tariff percentages charged by each of the five "
+    "countries on the others. For example, US (the blue line in the chart) "
+    "charges 20%, 40%, 30%, and 30% import tariff percentages on imports from "
+    "France, India, Japan, and UK, respectively. The bar chart depicts the "
+    "import tariffs levied by each country on other countries. For example, US "
+    "charged import tariff of 3 billion USD on UK.\n\n"
+    "Assume that imports from one country to another equal the exports from "
+    "the latter to the former. The trade surplus of Country X with Country Y "
+    "is defined as follows: Trade surplus = Exports from Country X to Country "
+    "Y - Imports to Country X from Country Y. A negative trade surplus is "
+    "called a trade deficit.\n\n"
+    "Import tariff percentage charged by row country on column country "
+    "(from the radar chart):\n\n"
+    "| Charges -> | US | France | India | Japan | UK |\n"
+    "|---|---|---|---|---|---|\n"
+    "| US | - | 20% | 40% | 30% | 30% |\n"
+    "| France | ~35% | - | 40% | ~20% | ~40% |\n"
+    "| India | ~40% | ~45% | - | 50% | ~20% |\n"
+    "| Japan | ~40% | 40% | ~35% | - | ~35% |\n"
+    "| UK | ~20% | ~35% | 20% | 30% | - |\n\n"
+    "Import tariff amount in Billion USD, charged by row country on column "
+    "country (from the bar chart):\n\n"
+    "| Charges -> | US | France | India | Japan | UK |\n"
+    "|---|---|---|---|---|---|\n"
+    "| US | - | 6 | ~4.5 | ~7 | 3 |\n"
+    "| France | 5 | - | 5 | ~4 | ~4.5 |\n"
+    "| India | ~9 | ~5 | - | 3.5 | ~6 |\n"
+    "| Japan | ~4 | 3 | ~8 | - | ~3 |\n"
+    "| UK | 3 | ~4 | 3 | 6 | - |"
+)
+QUESTIONS += [
+    {**q(_g, _slot, "Trade Tariffs Radar+Bar Chart DI", "MCQ",
+         "How much is Japan's export to India worth?",
+         ["8.5 Billion USD", "16.0 Billion USD", "7.0 Billion USD", "1.75 Billion USD"]), "passage_text": _passage},
+    {**q(_g, _slot, "Trade Tariffs Radar+Bar Chart DI", "MCQ",
+         "Which among the following is the highest?\n"
+         "1. Exports by Japan to UK\n"
+         "2. Imports by US from France\n"
+         "3. Exports by France to Japan\n"
+         "4. Imports by France from India",
+         ["Exports by Japan to UK", "Imports by US from France", "Exports by France to Japan",
+          "Imports by France from India"]), "passage_text": _passage},
+    {**q(_g, _slot, "Trade Tariffs Radar+Bar Chart DI", "MCQ",
+         "What is the trade surplus/trade deficit of India with UK?",
+         ["Surplus of 15.0 Billion USD", "Deficit of 15.0 Billion USD",
+          "Surplus of 10.0 Billion USD", "Deficit of 10.0 Billion USD"]), "passage_text": _passage},
+    {**q(_g, _slot, "Trade Tariffs Radar+Bar Chart DI", "MCQ",
+         "Among France and UK, who has/have trade surplus(es) with US?",
+         ["Neither France nor UK", "Both France and UK", "Only UK", "Only France"]), "passage_text": _passage},
+]
 
 _g = "cat2025_slot1_set4"
 _passage = (
