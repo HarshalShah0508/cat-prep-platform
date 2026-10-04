@@ -17,6 +17,12 @@ class CatMockTestQuestion(Base):
     marks_awarded = Column(Float, nullable=True)
     time_spent_seconds = Column(Integer, nullable=True)
     was_skipped = Column(Boolean, nullable=False, default=False)
+    marked_for_review = Column(Boolean, nullable=False, default=False)
+    visited = Column(Boolean, nullable=False, default=False)
+    # Authoritative palette state, set verbatim by the frontend only at the moment of an
+    # explicit Save & Next / Mark for Review action - never inferred backend-side, since
+    # "visited but never saved" must stay 'not_visited', not be promoted to 'not_answered'.
+    status = Column(String, nullable=False, default="not_visited")
 
     session = relationship("CatMockTestSession", back_populates="questions")
     question = relationship("CatQuestion")

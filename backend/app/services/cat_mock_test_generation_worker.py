@@ -31,6 +31,8 @@ def run(session_id: int) -> None:
             session.sections_included,
             session=session,
             question_source=session.question_source.value,
+            pyq_source_year=session.pyq_source_year,
+            pyq_source_slot=session.pyq_source_slot,
         )
     except Exception:
         logger.exception("Mock test generation failed for session_id=%s", session_id)

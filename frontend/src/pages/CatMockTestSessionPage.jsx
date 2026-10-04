@@ -8,6 +8,8 @@ import {
 } from '../api/catMockTestApi'
 import { useCatMockTest } from '../context/CatMockTestContext'
 import StepChart from '../components/StepChart'
+import QuestionPalette from '../components/QuestionPalette'
+import Calculator from '../components/Calculator'
 
 const SECTION_ORDER = ['VARC', 'DILR', 'QA']
 const AUTOSAVE_INTERVAL_MS = 20000
@@ -34,6 +36,15 @@ function formatRemaining(ms) {
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
 }
 
+const DEFAULT_ENTRY = {
+  selected_answer: null,
+  time_spent_seconds: 0,
+  was_skipped: true,
+  marked_for_review: false,
+  visited: false,
+  status: 'not_visited',
+}
+
 export default function CatMockTestSessionPage() {
   const { sessionId } = useParams()
   const navigate = useNavigate()
@@ -42,12 +53,57 @@ export default function CatMockTestSessionPage() {
   const [test, setTest] = useState(null)
   const [loadError, setLoadError] = useState('')
   const [sectionIndex, setSectionIndex] = useState(0)
-  const [answers, setAnswers] = useState({}) // { [questionId]: { selected_answer, time_spent_seconds, was_skipped } }
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
+  // Committed per-question state: { [questionId]: { selected_answer, time_spent_seconds,
+  // was_skipped, marked_for_review, visited, status } }. Only Save & Next / Mark for
+  // Review write here - navigating away any other way discards unsaved changes.
+  const [answers, setAnswers] = useState({})
+  // Transient selection for the CURRENTLY shown question only, pre-filled from the
+  // committed answer when landing on a question, discarded if left without saving.
+  const [draftAnswer, setDraftAnswer] = useState(null)
   const [deadline, setDeadline] = useState(null)
   const [now, setNow] = useState(Date.now())
   const [sectionStarting, setSectionStarting] = useState(false)
   const [finishing, setFinishing] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(Boolean(document.fullscreenElement))
+  const [showCalculator, setShowCalculator] = useState(false)
+  const [paletteCollapsed, setPaletteCollapsed] = useState(false)
   const sectionStartedRef = useRef(new Set())
+  const questionEnteredAtRef = useRef(Date.now())
+
+  function enterFullscreen() {
+    const el = document.documentElement
+    const request = el.requestFullscreen || el.webkitRequestFullscreen
+    if (request) {
+      request.call(el).catch(() => {})
+    }
+  }
+
+  function exitFullscreen() {
+    const exit = document.exitFullscreen || document.webkitExitFullscreen
+    if ((document.fullscreenElement || document.webkitFullscreenElement) && exit) {
+      exit.call(document).catch(() => {})
+    }
+  }
+
+  // Track real fullscreen state (the user can always bail with Escape - don't fight it,
+  // just reflect it so the "enter fullscreen" prompt can reappear).
+  useEffect(() => {
+    function handleChange() {
+      setIsFullscreen(Boolean(document.fullscreenElement || document.webkitFullscreenElement))
+    }
+    document.addEventListener('fullscreenchange', handleChange)
+    document.addEventListener('webkitfullscreenchange', handleChange)
+    return () => {
+      document.removeEventListener('fullscreenchange', handleChange)
+      document.removeEventListener('webkitfullscreenchange', handleChange)
+    }
+  }, [])
+
+  // Leaving the page (submit, exit, navigating away, unmount) always drops fullscreen.
+  useEffect(() => {
+    return () => exitFullscreen()
+  }, [])
 
   // Make sure the shared polling context is tracking this session (handles direct
   // navigation / refresh landing straight on this page).
@@ -73,6 +129,7 @@ export default function CatMockTestSessionPage() {
 
   const currentSection = sections[sectionIndex]
   const currentSectionData = currentSection ? sectionsMap[currentSection] : null
+  const currentQuestion = currentSectionData?.questions?.[currentQuestionIndex] ?? null
 
   // Load the full test once it's ready (or already in progress).
   useEffect(() => {
@@ -84,7 +141,26 @@ export default function CatMockTestSessionPage() {
     async function load() {
       try {
         const data = await getMockTest(sessionId)
-        if (!cancelled) setTest(data)
+        if (!cancelled) {
+          setTest(data)
+          // Seed committed answers from any previously-saved state (refresh recovery).
+          const seeded = {}
+          for (const s of data.sections ?? []) {
+            for (const q of s.questions ?? []) {
+              seeded[q.id] = {
+                selected_answer: q.selected_answer ?? null,
+                time_spent_seconds: 0,
+                was_skipped: q.was_skipped,
+                marked_for_review: q.marked_for_review,
+                visited: q.visited,
+                // Authoritative, verbatim from the backend - never re-derived, since
+                // "visited but never saved" must stay 'not_visited', not become red.
+                status: q.status || 'not_visited',
+              }
+            }
+          }
+          setAnswers(seeded)
+        }
       } catch (err) {
         if (!cancelled) {
           setLoadError(err?.response?.data?.detail || 'Could not load the test.')
@@ -97,31 +173,57 @@ export default function CatMockTestSessionPage() {
     }
   }, [sessionId, effectiveStatus])
 
-  const goToNextSectionOrSubmit = useCallback(async () => {
-    if (sectionIndex < sections.length - 1) {
-      setSectionIndex((i) => i + 1)
-    } else {
-      setFinishing(true)
-      try {
-        const result = await submitMockTest(sessionId)
-        navigate(`/mock-tests/${sessionId}/results`, { state: result })
-      } catch (err) {
-        setLoadError(err?.response?.data?.detail || 'Could not submit the test.')
-        setFinishing(false)
+  // Reset to the first question whenever the active section changes, and close the
+  // calculator (it's only offered for QA/DILR, matching the real exam).
+  useEffect(() => {
+    setCurrentQuestionIndex(0)
+    setShowCalculator(false)
+  }, [currentSection])
+
+  // Pre-fill the transient draft from committed state whenever the shown question
+  // changes, and start the per-question time-tracking clock.
+  useEffect(() => {
+    if (!currentQuestion) return
+    setDraftAnswer(answers[currentQuestion.id]?.selected_answer ?? null)
+    questionEnteredAtRef.current = Date.now()
+    // Mark visited (without touching status/selected_answer) the first time we land here.
+    setAnswers((prev) => {
+      const existing = prev[currentQuestion.id] || DEFAULT_ENTRY
+      if (existing.visited) return prev
+      return { ...prev, [currentQuestion.id]: { ...existing, visited: true } }
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentQuestion?.id])
+
+  const accumulateTime = useCallback((questionId) => {
+    if (!questionId) return
+    const elapsedSeconds = Math.round((Date.now() - questionEnteredAtRef.current) / 1000)
+    if (elapsedSeconds <= 0) return
+    setAnswers((prev) => {
+      const existing = prev[questionId] || DEFAULT_ENTRY
+      return {
+        ...prev,
+        [questionId]: {
+          ...existing,
+          time_spent_seconds: (existing.time_spent_seconds || 0) + elapsedSeconds,
+        },
       }
-    }
-  }, [sectionIndex, sections.length, sessionId, navigate])
+    })
+  }, [])
 
   const buildAnswersPayload = useCallback(
     (sectionData) => {
       if (!sectionData) return []
       return sectionData.questions.map((q) => {
-        const entry = answers[q.id] || {}
+        const entry = answers[q.id] || DEFAULT_ENTRY
         return {
           question_id: q.id,
           selected_answer: entry.selected_answer ?? null,
           time_spent_seconds: entry.time_spent_seconds ?? 0,
-          was_skipped: entry.was_skipped ?? !entry.selected_answer,
+          was_skipped: !entry.selected_answer,
+          marked_for_review: entry.marked_for_review ?? false,
+          visited: entry.visited ?? false,
+          status: entry.status || 'not_visited',
         }
       })
     },
@@ -137,9 +239,26 @@ export default function CatMockTestSessionPage() {
     }
   }, [sessionId, currentSection, currentSectionData, buildAnswersPayload])
 
-  // Start the section (once) when we land on it, and persist its deadline.
+  const goToNextSectionOrSubmit = useCallback(async () => {
+    if (sectionIndex < sections.length - 1) {
+      setSectionIndex((i) => i + 1)
+    } else {
+      setFinishing(true)
+      try {
+        const result = await submitMockTest(sessionId)
+        exitFullscreen()
+        navigate(`/mock-tests/${sessionId}/results`, { state: result })
+      } catch (err) {
+        setLoadError(err?.response?.data?.detail || 'Could not submit the test.')
+        setFinishing(false)
+      }
+    }
+  }, [sectionIndex, sections.length, sessionId, navigate])
+
+  // Start the section (once) when we land on it, and persist its deadline. Gated on
+  // fullscreen so the clock doesn't start before the user clicks "Begin Test".
   useEffect(() => {
-    if (!currentSection || !sessionId) return
+    if (!currentSection || !sessionId || !isFullscreen) return
     const key = deadlineKey(sessionId, currentSection)
     const stored = localStorage.getItem(key)
 
@@ -162,7 +281,7 @@ export default function CatMockTestSessionPage() {
         setLoadError(err?.response?.data?.detail || 'Could not start this section.')
       })
       .finally(() => setSectionStarting(false))
-  }, [currentSection, sessionId])
+  }, [currentSection, sessionId, isFullscreen])
 
   // Tick the clock every second.
   useEffect(() => {
@@ -195,35 +314,93 @@ export default function CatMockTestSessionPage() {
     return () => clearInterval(interval)
   }, [currentSection, saveCurrentSectionAnswers])
 
-  function setAnswer(questionId, selectedAnswer) {
-    setAnswers((prev) => ({
-      ...prev,
-      [questionId]: {
-        selected_answer: selectedAnswer,
-        time_spent_seconds: prev[questionId]?.time_spent_seconds ?? 0,
-        was_skipped: false,
-      },
-    }))
+  function commitCurrentQuestion(status) {
+    if (!currentQuestion) return
+    accumulateTime(currentQuestion.id)
+    setAnswers((prev) => {
+      const existing = prev[currentQuestion.id] || DEFAULT_ENTRY
+      return {
+        ...prev,
+        [currentQuestion.id]: {
+          ...existing,
+          selected_answer: draftAnswer || null,
+          was_skipped: !draftAnswer,
+          marked_for_review: status === 'marked_for_review' || status === 'answered_marked_for_review',
+          visited: true,
+          status,
+        },
+      }
+    })
   }
 
-  function skipQuestion(questionId) {
-    setAnswers((prev) => ({
-      ...prev,
-      [questionId]: {
-        selected_answer: null,
-        time_spent_seconds: prev[questionId]?.time_spent_seconds ?? 0,
-        was_skipped: true,
-      },
-    }))
+  function goToQuestionIndex(nextIndex) {
+    const total = currentSectionData?.questions?.length ?? 0
+    if (nextIndex < 0 || nextIndex >= total) return
+    setCurrentQuestionIndex(nextIndex)
   }
 
-  async function handleManualNext() {
+  function handleSaveNext() {
+    commitCurrentQuestion(draftAnswer ? 'answered' : 'not_answered')
+    goToQuestionIndex(currentQuestionIndex + 1)
+  }
+
+  function handleMarkForReview() {
+    // Real exam: marking a question with an answer already selected still counts it in
+    // scoring and shows a distinct 5th palette state (purple with a green dot), not
+    // plain "marked for review".
+    commitCurrentQuestion(draftAnswer ? 'answered_marked_for_review' : 'marked_for_review')
+    goToQuestionIndex(currentQuestionIndex + 1)
+  }
+
+  function handleClearResponse() {
+    setDraftAnswer(null)
+  }
+
+  function handlePaletteJump(index) {
+    if (index === currentQuestionIndex) return
+    // Leaving without Save & Next / Mark for Review discards the draft selection -
+    // only accumulate time spent, don't commit selected_answer/status.
+    accumulateTime(currentQuestion?.id)
+    goToQuestionIndex(index)
+  }
+
+  async function handleSubmitNow() {
+    const label = sectionIndex < sections.length - 1 ? 'this section' : 'the test'
+    if (!window.confirm(`Submit ${label}? You won't be able to change answers after this.`)) {
+      return
+    }
+    accumulateTime(currentQuestion?.id)
     if (sessionId && currentSection) {
       localStorage.removeItem(deadlineKey(sessionId, currentSection))
     }
     await saveCurrentSectionAnswers()
     setDeadline(null)
     goToNextSectionOrSubmit()
+  }
+
+  async function handleExitTest() {
+    if (
+      !window.confirm(
+        "Exit the test now? You'll be scored on whatever you've answered so far and taken to your results - you won't be able to come back to finish it.",
+      )
+    ) {
+      return
+    }
+    accumulateTime(currentQuestion?.id)
+    if (sessionId && currentSection) {
+      localStorage.removeItem(deadlineKey(sessionId, currentSection))
+    }
+    await saveCurrentSectionAnswers()
+    setDeadline(null)
+    setFinishing(true)
+    try {
+      const result = await submitMockTest(sessionId)
+      exitFullscreen()
+      navigate(`/mock-tests/${sessionId}/results`, { state: result })
+    } catch (err) {
+      setLoadError(err?.response?.data?.detail || 'Could not submit the test.')
+      setFinishing(false)
+    }
   }
 
   if (loadError) {
@@ -246,101 +423,153 @@ export default function CatMockTestSessionPage() {
     )
   }
 
-  if (!test || !currentSection || !currentSectionData) {
+  if (!test || !currentSection || !currentSectionData || !currentQuestion) {
     return <div className="page-loading">Loading test...</div>
   }
 
+  if (!isFullscreen) {
+    return (
+      <div className="page-container">
+        <div className="card generating-card">
+          <h1>Ready to begin?</h1>
+          <p className="text-muted">
+            The test runs in full screen, just like the real exam. Click below to enter full
+            screen and start the timer.
+          </p>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => {
+              enterFullscreen()
+            }}
+          >
+            Begin Test (Full Screen)
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   const isLastSection = sectionIndex === sections.length - 1
+  const isTita = currentQuestion.question_type === 'TITA' || currentQuestion.question_type === 'tita'
+  const paletteQuestions = currentSectionData.questions.map((q) => ({
+    id: q.id,
+    status: answers[q.id]?.status || 'not_visited',
+  }))
 
   return (
-    <div className="page-container">
+    <div className="page-container exam-page">
       <div className="mock-session-header">
         <div>
-          <h1>
-            {testTitle(test)} — {currentSection}
-          </h1>
+          <h1>{testTitle(test)} — {currentSection}</h1>
           <p className="text-muted">
-            Section {sectionIndex + 1} of {sections.length}
+            Question {currentQuestionIndex + 1} of {currentSectionData.questions.length}
           </p>
         </div>
         <div className={`timer ${remainingMs !== null && remainingMs < 60000 ? 'timer-warning' : ''}`}>
           {sectionStarting || remainingMs === null ? '--:--' : formatRemaining(remainingMs)}
         </div>
+        <div className="exam-header-actions">
+          {(currentSection === 'QA' || currentSection === 'DILR') && (
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm"
+              onClick={() => setShowCalculator((v) => !v)}
+            >
+              Calculator
+            </button>
+          )}
+          <button type="button" className="btn btn-ghost btn-sm" onClick={handleExitTest} disabled={finishing}>
+            Exit Test
+          </button>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={handleSubmitNow} disabled={finishing}>
+            {finishing ? 'Submitting...' : isLastSection ? 'Submit Test' : 'Submit Section'}
+          </button>
+        </div>
       </div>
 
-      <div className="question-list">
-        {currentSectionData.questions.map((q, idx) => {
-          const entry = answers[q.id]
-          const isTita = q.question_type === 'TITA' || q.question_type === 'tita'
-          const prevGroupId = idx > 0 ? currentSectionData.questions[idx - 1].group_id : null
-          const showPassage = q.passage_text && q.group_id !== prevGroupId
-          return (
-            <div key={q.id}>
-              {showPassage && (
-                <div className="card passage-card">
-                  <div className="question-meta">
-                    <span className="badge">Comprehension</span>
-                  </div>
-                  <p className="passage-text">{q.passage_text}</p>
-                  <StepChart charts={q.chart_data} />
-                </div>
-              )}
-              <div className="card question-card">
-                <div className="question-meta">
-                  <span>Q{idx + 1}</span>
-                  {q.topic && <span className="badge">{q.topic}</span>}
-                  {q.difficulty && <span className="badge badge-muted">{q.difficulty}</span>}
-                </div>
-                <p className="question-text">{q.question_text}</p>
-
-                {!isTita && Array.isArray(q.options) ? (
-                  <div className="options-list">
-                    {q.options.map((option, optIdx) => (
-                      <label key={optIdx} className="radio-item">
-                        <input
-                          type="radio"
-                          name={`q-${q.id}`}
-                          checked={entry?.selected_answer === option}
-                          onChange={() => setAnswer(q.id, option)}
-                        />
-                        <span>{option}</span>
-                      </label>
-                    ))}
-                  </div>
-                ) : (
-                  <input
-                    type="text"
-                    className="tita-input"
-                    placeholder="Type your answer"
-                    value={entry?.selected_answer ?? ''}
-                    onChange={(e) => setAnswer(q.id, e.target.value)}
-                  />
-                )}
-
-                <div className="question-actions">
-                  <button
-                    type="button"
-                    className="btn btn-ghost btn-sm"
-                    onClick={() => skipQuestion(q.id)}
-                  >
-                    {entry?.was_skipped ? 'Skipped' : 'Mark for review / skip'}
-                  </button>
-                </div>
+      <div className={`exam-layout ${paletteCollapsed ? 'exam-layout-collapsed' : ''}`}>
+        <div className="exam-question-area">
+          {currentQuestion.passage_text && (
+            <div className="card passage-card">
+              <div className="question-meta">
+                <span className="badge">Comprehension</span>
               </div>
+              <p className="passage-text">{currentQuestion.passage_text}</p>
+              <StepChart charts={currentQuestion.chart_data} />
             </div>
-          )
-        })}
+          )}
+
+          <div className="card question-card">
+            <div className="question-meta">
+              <span>Q{currentQuestionIndex + 1}</span>
+              {currentQuestion.topic && <span className="badge">{currentQuestion.topic}</span>}
+              {currentQuestion.difficulty && (
+                <span className="badge badge-muted">{currentQuestion.difficulty}</span>
+              )}
+            </div>
+            <p className="question-text">{currentQuestion.question_text}</p>
+
+            {!isTita && Array.isArray(currentQuestion.options) ? (
+              <div className="options-list">
+                {currentQuestion.options.map((option, optIdx) => (
+                  <label key={optIdx} className="radio-item">
+                    <input
+                      type="radio"
+                      name={`q-${currentQuestion.id}`}
+                      checked={draftAnswer === option}
+                      onChange={() => setDraftAnswer(option)}
+                    />
+                    <span>{option}</span>
+                  </label>
+                ))}
+              </div>
+            ) : (
+              <input
+                type="text"
+                className="tita-input"
+                placeholder="Type your answer"
+                value={draftAnswer ?? ''}
+                onChange={(e) => setDraftAnswer(e.target.value)}
+              />
+            )}
+
+            <div className="exam-actions">
+              <button type="button" className="btn btn-ghost" onClick={handleClearResponse}>
+                Clear Response
+              </button>
+              <button type="button" className="btn btn-secondary" onClick={handleMarkForReview}>
+                Mark for Review &amp; Next
+              </button>
+              <button type="button" className="btn btn-primary" onClick={handleSaveNext}>
+                Save &amp; Next
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          className="palette-toggle"
+          onClick={() => setPaletteCollapsed((v) => !v)}
+          aria-label={paletteCollapsed ? 'Expand question palette' : 'Collapse question palette'}
+          title={paletteCollapsed ? 'Expand question palette' : 'Collapse question palette'}
+        >
+          {paletteCollapsed ? '‹' : '›'}
+        </button>
+
+        {!paletteCollapsed && (
+          <QuestionPalette
+            questions={paletteQuestions}
+            currentIndex={currentQuestionIndex}
+            onJump={handlePaletteJump}
+          />
+        )}
       </div>
 
-      <div className="mock-session-footer">
-        <button type="button" className="btn btn-primary" onClick={handleManualNext} disabled={finishing}>
-          {finishing
-            ? 'Submitting...'
-            : isLastSection
-              ? 'Submit test'
-              : 'Submit section & continue'}
-        </button>
-      </div>
+      {showCalculator && (currentSection === 'QA' || currentSection === 'DILR') && (
+        <Calculator onClose={() => setShowCalculator(false)} />
+      )}
     </div>
   )
 }

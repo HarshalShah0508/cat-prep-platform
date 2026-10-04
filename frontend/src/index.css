@@ -14,6 +14,10 @@
   --color-error-bg: #fdeceb;
   --color-warning: #b5790a;
   --color-warning-bg: #fdf3e0;
+  --color-review: #7c3aed;
+  --color-review-bg: #f1e9fe;
+  --color-not-visited: #9aa1b0;
+  --color-not-visited-bg: #eef0f4;
   --radius: 10px;
   --shadow-sm: 0 1px 2px rgba(20, 24, 39, 0.06), 0 1px 1px rgba(20, 24, 39, 0.04);
   --shadow-md: 0 4px 14px rgba(20, 24, 39, 0.08);
@@ -202,6 +206,15 @@ a:hover {
   font-weight: 600;
   font-size: 0.88rem;
   margin-bottom: 0.4rem;
+}
+
+.form-row {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.form-row select {
+  flex: 1;
 }
 
 input[type='text'],
@@ -468,6 +481,7 @@ textarea {
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 1.5rem;
+  flex-wrap: wrap;
 }
 
 .timer {
@@ -794,4 +808,269 @@ textarea {
   height: 10px;
   border-radius: 2px;
   display: inline-block;
+}
+
+/* Real-exam-style question-at-a-time layout */
+.exam-layout {
+  display: grid;
+  grid-template-columns: 1fr 28px 280px;
+  gap: 0.5rem;
+  align-items: start;
+  margin-top: 1rem;
+}
+
+.exam-layout-collapsed {
+  grid-template-columns: 1fr 28px;
+}
+
+.exam-question-area {
+  min-width: 0;
+}
+
+.palette-toggle {
+  position: sticky;
+  top: 1rem;
+  width: 28px;
+  height: 40px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.palette-toggle:hover {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.exam-header-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.exam-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+/* Question palette */
+.question-palette {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.palette-title {
+  font-size: 0.95rem;
+  margin-bottom: 0.75rem;
+}
+
+.palette-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.4rem;
+}
+
+.palette-cell {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.palette-cell-current {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.palette-cell-not-visited {
+  background: var(--color-not-visited-bg);
+  color: var(--color-text-muted);
+}
+
+.palette-cell-not-answered {
+  background: var(--color-error);
+  color: #fff;
+  border-color: var(--color-error);
+}
+
+.palette-cell-answered {
+  background: var(--color-success);
+  color: #fff;
+  border-color: var(--color-success);
+}
+
+.palette-cell-marked {
+  background: var(--color-review);
+  color: #fff;
+  border-color: var(--color-review);
+}
+
+/* Real exam's 5th palette state: marked for review but an answer was already given -
+   purple cell with a small green dot, distinct from plain "marked for review". */
+.palette-cell-marked-answered::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-success);
+  border: 1px solid var(--color-surface);
+}
+
+.palette-swatch.palette-cell-marked-answered {
+  position: relative;
+}
+
+.palette-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 1rem;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.palette-legend span {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.palette-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+@media (max-width: 840px) {
+  .exam-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .question-palette {
+    position: static;
+  }
+}
+
+/* On-screen calculator (QA/DILR only) */
+.calculator-panel {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  width: 260px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  padding: 0.75rem;
+  z-index: 50;
+}
+
+.calculator-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+.calculator-close {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  padding: 0.1rem 0.4rem;
+}
+
+.calculator-display {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 0.6rem 0.65rem;
+  text-align: right;
+  font-size: 1.15rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  margin-bottom: 0.6rem;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.calculator-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.4rem;
+}
+
+.calculator-btn {
+  padding: 0.55rem 0;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.calculator-btn:hover {
+  background: var(--color-bg);
+}
+
+.calculator-btn-op {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
+.calculator-btn-op:hover {
+  background: var(--color-primary-hover);
+}
+
+.calculator-btn-equals {
+  grid-column: 1 / -1;
+}
+
+.calculator-btn-zero {
+  grid-column: span 2;
+}
+
+.calculator-btn-mem {
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+
+.calculator-memory-tag {
+  display: inline-block;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  border-radius: 4px;
+  padding: 0.05rem 0.3rem;
+  margin-left: 0.3rem;
 }

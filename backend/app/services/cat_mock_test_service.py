@@ -73,25 +73,39 @@ def _weak_topics_for_section(db: Session, user: User, section: str) -> List[str]
     return [c.concept for c in concepts]
 
 
-def _pick_bank_questions(db: Session, user: User, section: str, count: int) -> List[CatQuestion]:
+def _pick_bank_questions(
+    db: Session,
+    user: User,
+    section: str,
+    count: int,
+    source_year: Optional[int] = None,
+    source_slot: Optional[str] = None,
+) -> List[CatQuestion]:
     """Pick ~`count` bank questions for a section, weighted toward weak concepts /
     background-implied weak sections. Questions sharing a `group_id` (e.g. a DILR set
     with one shared passage across 4-6 questions) are always selected and ordered as a
     whole group - splitting a group would leave the passage's other questions
     unanswerable, so a chosen group may push the total slightly over `count` rather
-    than being cut short."""
+    than being cut short.
+
+    If `source_year`/`source_slot` are given, the bank pool is narrowed to that one
+    real paper only (e.g. a student choosing "PYQs only" + a specific year/slot rather
+    than a shuffled mix across every paper in the bank)."""
     if count <= 0:
         return []
 
     weak_topics = _weak_topics_for_section(db, user, section)
     background_weak_section = BACKGROUND_WEAK_SECTION.get(user.cat_academic_background or "")
 
-    candidates = (
-        db.query(CatQuestion)
-        .filter(CatQuestion.section == section, CatQuestion.is_active.is_(True))
-        .order_by(CatQuestion.id.asc())
-        .all()
+    query = db.query(CatQuestion).filter(
+        CatQuestion.section == section, CatQuestion.is_active.is_(True)
     )
+    if source_year is not None:
+        query = query.filter(CatQuestion.source_year == source_year)
+    if source_slot is not None:
+        query = query.filter(CatQuestion.source_slot == source_slot)
+
+    candidates = query.order_by(CatQuestion.id.asc()).all()
     if not candidates:
         return []
 
@@ -158,19 +172,25 @@ def assemble_mock_test(
     sections: List[str],
     session: Optional[CatMockTestSession] = None,
     question_source: str = CatQuestionSourcePreference.MIXED.value,
+    pyq_source_year: Optional[int] = None,
+    pyq_source_slot: Optional[str] = None,
 ) -> CatMockTestSession:
     """Populate `session` (creating one if not given) with a full set of
     CatMockTestQuestion rows for each requested section. `question_source` controls the
     PYQ-bank / AI-generated mix: "mixed" (default) is ~60% bank / ~40% fresh Gemini
     generation, weighted toward weak concepts / background-implied weak sections;
     "pyq_only" pulls entirely from the question bank; "ai_only" generates entirely fresh
-    questions via Gemini, skipping the bank."""
+    questions via Gemini, skipping the bank. `pyq_source_year`/`pyq_source_slot` narrow
+    the bank pool to one specific real paper instead of sampling across all of them -
+    only meaningful when `question_source` actually touches the bank."""
     if session is None:
         session = CatMockTestSession(
             user_id=user.id,
             test_type=test_type,
             sections_included=sections,
             question_source=question_source,
+            pyq_source_year=pyq_source_year,
+            pyq_source_slot=pyq_source_slot,
             status=CatMockTestStatus.GENERATING,
         )
         db.add(session)
@@ -189,7 +209,11 @@ def assemble_mock_test(
             bank_count = math.ceil(total_count * BANK_SHARE)
         ai_count = total_count - bank_count
 
-        bank_questions = _pick_bank_questions(db, user, section, bank_count) if bank_count > 0 else []
+        bank_questions = (
+            _pick_bank_questions(db, user, section, bank_count, pyq_source_year, pyq_source_slot)
+            if bank_count > 0
+            else []
+        )
         if question_source != CatQuestionSourcePreference.PYQ_ONLY.value and len(bank_questions) < bank_count:
             ai_count += bank_count - len(bank_questions)
 

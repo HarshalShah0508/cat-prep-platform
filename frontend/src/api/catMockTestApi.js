@@ -2,9 +2,9 @@ import client from './client'
 
 const BASE = '/cat/mock-tests'
 
-export function startMockTest({ test_type, sections, question_source }) {
+export function startMockTest({ test_type, sections, question_source, pyq_source_year, pyq_source_slot }) {
   return client
-    .post(`${BASE}/start`, { test_type, sections, question_source })
+    .post(`${BASE}/start`, { test_type, sections, question_source, pyq_source_year, pyq_source_slot })
     .then((res) => res.data)
 }
 

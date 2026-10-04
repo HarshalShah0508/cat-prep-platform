@@ -1,11 +1,16 @@
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+
+const EXAM_ROUTE = /^\/mock-tests\/\d+$/
 
 export default function Navbar() {
   const { isAuthenticated, user, logout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
 
-  if (!isAuthenticated) {
+  // Locked down during an active test - no navigating away except the page's own
+  // "Exit Test" control, same as a real exam interface.
+  if (!isAuthenticated || EXAM_ROUTE.test(location.pathname)) {
     return null
   }
 

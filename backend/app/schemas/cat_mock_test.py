@@ -8,6 +8,8 @@ class MockTestStartRequest(BaseModel):
     test_type: str
     sections: List[str]
     question_source: str = "mixed"
+    pyq_source_year: Optional[int] = None
+    pyq_source_slot: Optional[str] = None
 
 
 class MockTestStartResponse(BaseModel):
@@ -33,6 +35,9 @@ class MockTestQuestionOut(BaseModel):
     options: Optional[List[str]] = None
     selected_answer: Optional[str] = None
     was_skipped: bool = False
+    marked_for_review: bool = False
+    visited: bool = False
+    status: str = "not_visited"
 
 
 class MockTestSectionOut(BaseModel):
@@ -64,6 +69,9 @@ class AnswerSubmission(BaseModel):
     selected_answer: Optional[str] = None
     time_spent_seconds: Optional[int] = None
     was_skipped: bool = False
+    marked_for_review: bool = False
+    visited: bool = False
+    status: str = "not_visited"
 
 
 class SectionAnswersRequest(BaseModel):

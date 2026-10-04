@@ -19,12 +19,23 @@ function SectionBar({ correct, wrong, skipped, ungraded = 0 }) {
 
 function QuestionReview({ question }) {
   const [expanded, setExpanded] = useState(false)
-  // PYQs loaded before their answer key was transcribed have no correct_answer
-  // yet, so is_correct comes back null - that's "ungraded", not "incorrect".
-  const ungraded = !question.correct_answer
+  // is_correct comes back null in two different cases that need different
+  // labels: PYQs loaded before their answer key was transcribed (no
+  // correct_answer at all), vs. a question with a real answer key that the
+  // user simply never attempted (correct_answer exists, selected_answer
+  // doesn't).
+  const noAnswerKey = !question.correct_answer
+  const notAttempted = !noAnswerKey && question.is_correct === null
+  const ungraded = noAnswerKey || notAttempted
   const isCorrect = question.is_correct
   const badgeClass = ungraded ? 'badge-muted' : isCorrect ? 'badge-success' : 'badge-error'
-  const badgeText = ungraded ? 'Answer key pending' : isCorrect ? 'Correct' : 'Incorrect'
+  const badgeText = noAnswerKey
+    ? 'Answer key pending'
+    : notAttempted
+      ? 'Not attempted'
+      : isCorrect
+        ? 'Correct'
+        : 'Incorrect'
   const cardClass = ungraded ? '' : isCorrect ? 'question-correct' : 'question-incorrect'
 
   return (
@@ -41,7 +52,7 @@ function QuestionReview({ question }) {
             <ul className="options-list-static">
               {question.options.map((option, idx) => {
                 const isUserAnswer = option === question.selected_answer
-                const isCorrectAnswer = !ungraded && option === question.correct_answer
+                const isCorrectAnswer = !noAnswerKey && option === question.correct_answer
                 let cls = ''
                 if (isCorrectAnswer) cls = 'option-correct'
                 else if (isUserAnswer) cls = 'option-wrong'
@@ -59,7 +70,7 @@ function QuestionReview({ question }) {
             <p>
               <strong>Your answer:</strong> {question.selected_answer || '—'}
               <br />
-              <strong>Correct answer:</strong> {ungraded ? 'Pending' : question.correct_answer}
+              <strong>Correct answer:</strong> {noAnswerKey ? 'Pending' : question.correct_answer}
             </p>
           )}
           {question.explanation && (

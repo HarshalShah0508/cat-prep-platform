@@ -64,6 +64,9 @@ def build_mock_test_detail_response(session: CatMockTestSession) -> MockTestDeta
                 options=data.get("options"),
                 selected_answer=mtq.selected_answer,
                 was_skipped=mtq.was_skipped,
+                marked_for_review=mtq.marked_for_review,
+                visited=mtq.visited,
+                status=mtq.status,
             )
         )
 
@@ -101,6 +104,8 @@ def start_mock_test(
         test_type=payload.test_type,
         sections_included=payload.sections,
         question_source=payload.question_source,
+        pyq_source_year=payload.pyq_source_year,
+        pyq_source_slot=payload.pyq_source_slot,
         status=CatMockTestStatus.GENERATING,
     )
     db.add(session)
@@ -171,6 +176,9 @@ def submit_section_answers(
         mtq.selected_answer = answer.selected_answer
         mtq.time_spent_seconds = answer.time_spent_seconds
         mtq.was_skipped = answer.was_skipped
+        mtq.marked_for_review = answer.marked_for_review
+        mtq.visited = answer.visited
+        mtq.status = answer.status
         db.add(mtq)
 
     now = datetime.now(timezone.utc)
