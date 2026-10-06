@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { startMockTest } from '../api/catMockTestApi'
+import { startMockTest, getTopicOptions } from '../api/catMockTestApi'
 import { getAvailablePyqPapers } from '../api/catPyqApi'
 import { useCatMockTest } from '../context/CatMockTestContext'
 
 const ALL_SECTIONS = ['VARC', 'DILR', 'QA']
 const SLOT_LABELS = { slot1: 'Slot 1', slot2: 'Slot 2', slot3: 'Slot 3' }
+const QUESTION_COUNT_OPTIONS = [10, 16, 22]
+const DRILL_SECTIONS = ['QA', 'VARC', 'DILR']
 
 export default function CatMockTestSetupPage() {
   const navigate = useNavigate()
@@ -19,6 +21,14 @@ export default function CatMockTestSetupPage() {
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
+  const [drillSection, setDrillSection] = useState('QA')
+  const [topicGroups, setTopicGroups] = useState({})
+  const [topicMode, setTopicMode] = useState('topic_wise')
+  const [expandedCategories, setExpandedCategories] = useState([])
+  const [selectedTopicsByCategory, setSelectedTopicsByCategory] = useState({})
+  const [questionStyle, setQuestionStyle] = useState('challenging')
+  const [questionCount, setQuestionCount] = useState(22)
+
   useEffect(() => {
     getAvailablePyqPapers()
       .then(setPapers)
@@ -26,6 +36,40 @@ export default function CatMockTestSetupPage() {
         // Non-fatal: the year/slot picker just won't have options to offer.
       })
   }, [])
+
+  useEffect(() => {
+    if (testType !== 'topic_drill') return
+    getTopicOptions(drillSection)
+      .then(setTopicGroups)
+      .catch(() => {
+        // Non-fatal: the topic picker just won't have options to offer.
+      })
+    // Switching section invalidates any topics picked for the previous section.
+    setExpandedCategories([])
+    setSelectedTopicsByCategory({})
+  }, [testType, drillSection])
+
+  function toggleCategory(category) {
+    setExpandedCategories((prev) =>
+      prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category],
+    )
+  }
+
+  function toggleTopicInCategory(category, topic) {
+    setSelectedTopicsByCategory((prev) => {
+      const current = prev[category] || []
+      const next = current.includes(topic)
+        ? current.filter((t) => t !== topic)
+        : [...current, topic]
+      return { ...prev, [category]: next }
+    })
+  }
+
+  const allTopicsFlat = useMemo(() => Object.values(topicGroups).flat(), [topicGroups])
+  const selectedTopics =
+    topicMode === 'full_syllabus'
+      ? allTopicsFlat
+      : Object.values(selectedTopicsByCategory).flat()
 
   const years = useMemo(
     () => [...new Set(papers.map((p) => p.source_year))].sort((a, b) => b - a),
@@ -52,9 +96,38 @@ export default function CatMockTestSetupPage() {
     setPyqSlot('any')
   }
 
+  const isTopicDrill = testType === 'topic_drill'
+
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
+
+    if (isTopicDrill) {
+      if (selectedTopics.length === 0) {
+        setError('Please select at least one topic.')
+        return
+      }
+      setSubmitting(true)
+      try {
+        const data = await startMockTest({
+          test_type: testType,
+          sections: [drillSection],
+          question_source: 'ai_only',
+          topics: selectedTopics,
+          question_style: questionStyle,
+          question_count: questionCount,
+        })
+        trackSession(data.session_id, data.status)
+        navigate(`/mock-tests/${data.session_id}`)
+      } catch (err) {
+        const message =
+          err?.response?.data?.detail || 'Could not start the practice test. Please try again.'
+        setError(message)
+      } finally {
+        setSubmitting(false)
+      }
+      return
+    }
 
     const chosenSections = testType === 'full_mock' ? ALL_SECTIONS : sections
     if (chosenSections.length === 0) {
@@ -127,47 +200,174 @@ export default function CatMockTestSetupPage() {
             </div>
           </div>
 
-          <div className="form-group">
-            <label>Question source</label>
-            <div className="radio-group">
-              <label className="radio-item">
-                <input
-                  type="radio"
-                  name="questionSource"
-                  value="mixed"
-                  checked={questionSource === 'mixed'}
-                  onChange={() => setQuestionSource('mixed')}
-                />
-                <span>Mixed - PYQs + new AI-generated (Recommended)</span>
-              </label>
-              <label className="radio-item">
-                <input
-                  type="radio"
-                  name="questionSource"
-                  value="pyq_only"
-                  checked={questionSource === 'pyq_only'}
-                  onChange={() => setQuestionSource('pyq_only')}
-                />
-                <span>PYQs only</span>
-              </label>
-              <label className="radio-item">
-                <input
-                  type="radio"
-                  name="questionSource"
-                  value="ai_only"
-                  checked={questionSource === 'ai_only'}
-                  onChange={() => setQuestionSource('ai_only')}
-                />
-                <span>New questions only (AI-generated)</span>
-              </label>
-            </div>
-            <p className="text-muted">
-              Want a specific past paper instead of a shuffled mix? Try{' '}
-              <Link to="/pyq-tests">PYQ Practice</Link>.
-            </p>
-          </div>
+          {isTopicDrill ? (
+            <>
+              <div className="form-group">
+                <label>Section</label>
+                <div className="radio-group">
+                  {DRILL_SECTIONS.map((section) => (
+                    <label key={section} className="radio-item">
+                      <input
+                        type="radio"
+                        name="drillSection"
+                        value={section}
+                        checked={drillSection === section}
+                        onChange={() => setDrillSection(section)}
+                      />
+                      <span>{section}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
 
-          {showPyqFilter && (
+              <div className="form-group">
+                <label>Coverage</label>
+                <p className="text-muted">
+                  Questions are freshly generated for you each time, never reused from a
+                  previous practice test.
+                </p>
+                <div className="radio-group">
+                  <label className="radio-item">
+                    <input
+                      type="radio"
+                      name="topicMode"
+                      value="topic_wise"
+                      checked={topicMode === 'topic_wise'}
+                      onChange={() => setTopicMode('topic_wise')}
+                    />
+                    <span>Topic-wise</span>
+                  </label>
+                  <label className="radio-item">
+                    <input
+                      type="radio"
+                      name="topicMode"
+                      value="full_syllabus"
+                      checked={topicMode === 'full_syllabus'}
+                      onChange={() => setTopicMode('full_syllabus')}
+                    />
+                    <span>Full syllabus</span>
+                  </label>
+                </div>
+              </div>
+
+              {topicMode === 'topic_wise' && (
+                <div className="form-group">
+                  <label>Topics</label>
+                  {Object.entries(topicGroups).map(([category, topics]) => (
+                    <div key={category} className="topic-category">
+                      <label className="checkbox-item">
+                        <input
+                          type="checkbox"
+                          checked={expandedCategories.includes(category)}
+                          onChange={() => toggleCategory(category)}
+                        />
+                        <span>
+                          <strong>{category}</strong>
+                        </span>
+                      </label>
+                      {expandedCategories.includes(category) && (
+                        <div className="checkbox-grid" style={{ marginLeft: '1.5rem' }}>
+                          {topics.map((topic) => (
+                            <label key={topic} className="checkbox-item">
+                              <input
+                                type="checkbox"
+                                checked={(selectedTopicsByCategory[category] || []).includes(topic)}
+                                onChange={() => toggleTopicInCategory(category, topic)}
+                              />
+                              <span>{topic}</span>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="form-group">
+                <label>Difficulty style</label>
+                <div className="radio-group">
+                  <label className="radio-item">
+                    <input
+                      type="radio"
+                      name="questionStyle"
+                      value="challenging"
+                      checked={questionStyle === 'challenging'}
+                      onChange={() => setQuestionStyle('challenging')}
+                    />
+                    <span>Tough &amp; lengthy - multi-step, disguised, non-direct (Recommended)</span>
+                  </label>
+                  <label className="radio-item">
+                    <input
+                      type="radio"
+                      name="questionStyle"
+                      value="standard"
+                      checked={questionStyle === 'standard'}
+                      onChange={() => setQuestionStyle('standard')}
+                    />
+                    <span>Standard difficulty</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Number of questions</label>
+                <select
+                  value={questionCount}
+                  onChange={(e) => setQuestionCount(Number(e.target.value))}
+                  className="select-input"
+                >
+                  {QUESTION_COUNT_OPTIONS.map((count) => (
+                    <option key={count} value={count}>
+                      {count}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
+          ) : (
+            <div className="form-group">
+              <label>Question source</label>
+              <div className="radio-group">
+                <label className="radio-item">
+                  <input
+                    type="radio"
+                    name="questionSource"
+                    value="mixed"
+                    checked={questionSource === 'mixed'}
+                    onChange={() => setQuestionSource('mixed')}
+                  />
+                  <span>Mixed - PYQs + new AI-generated (Recommended)</span>
+                </label>
+                <label className="radio-item">
+                  <input
+                    type="radio"
+                    name="questionSource"
+                    value="pyq_only"
+                    checked={questionSource === 'pyq_only'}
+                    onChange={() => setQuestionSource('pyq_only')}
+                  />
+                  <span>PYQs only</span>
+                </label>
+                <label className="radio-item">
+                  <input
+                    type="radio"
+                    name="questionSource"
+                    value="ai_only"
+                    checked={questionSource === 'ai_only'}
+                    onChange={() => setQuestionSource('ai_only')}
+                  />
+                  <span>New questions only (AI-generated)</span>
+                </label>
+              </div>
+              <p className="text-muted">
+                Want a specific past paper instead of a shuffled mix? Try{' '}
+                <Link to="/pyq-tests">PYQ Practice</Link>.
+              </p>
+            </div>
+          )}
+
+          {!isTopicDrill && showPyqFilter && (
             <div className="form-group">
               <label>PYQ year &amp; slot (optional)</label>
               <div className="form-row">
@@ -204,7 +404,7 @@ export default function CatMockTestSetupPage() {
             </div>
           )}
 
-          {testType !== 'full_mock' && (
+          {testType !== 'full_mock' && !isTopicDrill && (
             <div className="form-group">
               <label>Sections</label>
               <div className="checkbox-grid">

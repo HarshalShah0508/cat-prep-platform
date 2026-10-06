@@ -26,6 +26,12 @@ class CatMockTestSession(Base):
     # Only set for test_type=pyq_paper - which exact paper this session replays.
     pyq_source_year = Column(Integer, nullable=True)
     pyq_source_slot = Column(String, nullable=True)
+    # Only set for a user-driven custom topic practice session (QA only for now) -
+    # the topics picked and whether to generate harder, multi-step, non-direct
+    # questions ("challenging") instead of the default style ("standard").
+    topics = Column(JSON, nullable=True)
+    question_style = Column(String, nullable=True, default="standard")
+    question_count = Column(Integer, nullable=True)
     status = Column(
         sa_enum(CatMockTestStatus, "cat_mock_test_status"),
         nullable=False,

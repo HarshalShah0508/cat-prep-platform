@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 T = TypeVar("T", bound=BaseModel)
 
 COOLDOWN_SECONDS = 60
-DEFAULT_MODEL = "gemini-2.0-flash"
+DEFAULT_MODEL = "gemini-3.5-flash"
 
 
 class GeminiKeyManager:
@@ -29,7 +29,15 @@ class GeminiKeyManager:
 
     def _client_for(self, api_key: str) -> "genai.Client":
         if api_key not in self._clients:
-            self._clients[api_key] = genai.Client(api_key=api_key)
+            # Without an explicit timeout, a single wedged connection can hang the
+            # calling thread indefinitely (observed in practice: a background mock-test
+            # generation task stuck for 7+ minutes on one call with no error ever
+            # raised) - bound it so a stuck request surfaces as a retryable failure
+            # instead of hanging the whole generation job.
+            self._clients[api_key] = genai.Client(
+                api_key=api_key,
+                http_options=types.HttpOptions(timeout=60_000),
+            )
         return self._clients[api_key]
 
     def _ordered_keys(self) -> list:

@@ -1,6 +1,7 @@
 import json
 import math
 import random
+import time
 from typing import Dict, List, Optional
 
 from sqlalchemy.orm import Session
@@ -18,7 +19,10 @@ from app.models.enums import (
 )
 from app.models.user import User
 from app.services.gemini_key_manager import gemini_key_manager
-from app.services.prompts.cat_question_prompt import build_cat_question_prompt
+from app.services.prompts.cat_question_prompt import (
+    build_cat_question_prompt,
+    build_verification_prompt,
+)
 
 SECTION_QUESTION_COUNTS: Dict[str, int] = {"VARC": 24, "DILR": 22, "QA": 22}
 SECTION_TIME_LIMIT_SECONDS = 40 * 60
@@ -41,6 +45,90 @@ FALLBACK_TOPICS = {
 
 DIFFICULTIES = ["easy", "medium", "hard"]
 
+# Granular QA topics offered to a user picking topics for a custom practice test,
+# grouped under the 5 main syllabus categories for a two-level picker (category ->
+# specific topic) - richer than FALLBACK_TOPICS["QA"]'s 5 bare categories, since a
+# real topic picker needs choices a student would actually recognize as their weak area.
+QA_TOPIC_GROUPS: Dict[str, List[str]] = {
+    "Arithmetic": [
+        "Percentages", "Profit, Loss and Discount", "Simple and Compound Interest",
+        "Time, Speed and Distance", "Time and Work", "Averages",
+        "Ratio and Proportion", "Mixtures and Alligation",
+    ],
+    "Algebra": [
+        "Linear and Quadratic Equations", "Functions", "Logarithms and Exponents",
+        "Inequalities", "Sequences and Series",
+    ],
+    "Geometry and Mensuration": [
+        "Geometry - Triangles", "Geometry - Circles", "Mensuration", "Coordinate Geometry",
+    ],
+    "Number Systems": ["Number Systems - Remainders and Divisors"],
+    "Modern Math": ["Permutation and Combination", "Probability", "Sets and Venn Diagrams"],
+}
+QA_TOPIC_OPTIONS: List[str] = [t for topics in QA_TOPIC_GROUPS.values() for t in topics]
+
+# Granular VARC topics for the same two-level picker, grounded in the real seeded
+# question taxonomy (cat_questions.topic): Reading Comprehension dominates and already
+# carries a real subject-domain axis (passages tagged by subject), while the other four
+# are standalone verbal-ability types with no natural sub-topic - each is kept as a
+# single-item "category" so the same category -> expand -> checkbox UI works for all of
+# them without a special "no sub-topic" case.
+VARC_TOPIC_GROUPS: Dict[str, List[str]] = {
+    "Reading Comprehension": [
+        "Reading Comprehension - Science & Technology",
+        "Reading Comprehension - Economics & Business",
+        "Reading Comprehension - Society & Politics",
+        "Reading Comprehension - Philosophy & Ideas",
+        "Reading Comprehension - History & Culture",
+        "Reading Comprehension - Environment & Sustainability",
+    ],
+    "Para-jumbles": ["Para-jumbles"],
+    "Paragraph Summary": ["Paragraph Summary"],
+    "Sentence Insertion": ["Sentence Insertion"],
+    "Odd Sentence Out": ["Odd Sentence Out"],
+}
+VARC_TOPIC_OPTIONS: List[str] = [t for topics in VARC_TOPIC_GROUPS.values() for t in topics]
+
+# Granular DILR topics for the same two-level picker. The real seeded bank mostly tags
+# DILR rows either generically ("Data Interpretation & Logical Reasoning", the bulk PYQ
+# sets) or with one-off puzzle-instance titles (e.g. "Musicians and Gurus Scheduling
+# Puzzle") that are set names, not reusable topics a student would pick to drill on. The
+# groups below instead follow the standard DI/LR syllabus split, grounded in the handful
+# of bare generic topics that do appear in the bank at low count (Data Table
+# Interpretation, Logical Reasoning, Coding-Decoding, Number Series, Linear Arrangement,
+# Venn Diagrams, Blood Relations).
+DILR_TOPIC_GROUPS: Dict[str, List[str]] = {
+    "Data Interpretation": [
+        "DI - Tables", "DI - Bar and Line Charts", "DI - Pie Charts",
+        "DI - Caselets", "DI - Mixed Charts",
+    ],
+    "Logical Reasoning - Arrangements": [
+        "Linear Arrangement", "Circular/Seating Arrangement", "Scheduling Puzzles",
+        "Distribution and Matching Puzzles",
+    ],
+    "Logical Reasoning - Other": [
+        "Data Sufficiency", "Venn Diagrams", "Blood Relations",
+        "Coding-Decoding", "Number and Letter Series",
+    ],
+}
+DILR_TOPIC_OPTIONS: List[str] = [t for topics in DILR_TOPIC_GROUPS.values() for t in topics]
+
+TOPIC_GROUPS_BY_SECTION: Dict[str, Dict[str, List[str]]] = {
+    "QA": QA_TOPIC_GROUPS,
+    "VARC": VARC_TOPIC_GROUPS,
+    "DILR": DILR_TOPIC_GROUPS,
+}
+TOPIC_OPTIONS_BY_SECTION: Dict[str, List[str]] = {
+    "QA": QA_TOPIC_OPTIONS,
+    "VARC": VARC_TOPIC_OPTIONS,
+    "DILR": DILR_TOPIC_OPTIONS,
+}
+
+# Max attempts (generate + verify + dedup-check) per question slot in a custom topic
+# practice test before giving up on that slot rather than inserting an unverified or
+# duplicate question.
+CUSTOM_GENERATION_MAX_ATTEMPTS = 3
+
 PERCENTILE_TABLE = [
     (150.0, 99.0),
     (120.0, 95.0),
@@ -58,6 +146,20 @@ def estimate_percentile(raw_score: float) -> float:
         if raw_score >= threshold:
             return percentile
     return PERCENTILE_FLOOR
+
+
+def _parse_gemini_json(result) -> dict:
+    """Gemini's plain-text responses (no response_schema set) frequently wrap the JSON
+    object in a ```json ... ``` markdown code fence despite being told to return only
+    JSON - strip that before parsing, rather than letting json.loads blow up on it."""
+    if not isinstance(result, str):
+        return result
+    text = result.strip()
+    if text.startswith("```"):
+        text = text.split("\n", 1)[1] if "\n" in text else text[3:]
+        if text.rstrip().endswith("```"):
+            text = text.rstrip()[: -3]
+    return json.loads(text)
 
 
 def _weak_topics_for_section(db: Session, user: User, section: str) -> List[str]:
@@ -162,7 +264,112 @@ def _random_topic(section: str, weak_topics: List[str]) -> str:
 def _generate_ai_question(section: str, topic: str, difficulty: str, question_type: str) -> dict:
     prompt = build_cat_question_prompt(section, topic, difficulty, question_type)
     result = gemini_key_manager.generate_content(prompt, purpose=f"cat_question:{section}:{topic}")
-    return json.loads(result) if isinstance(result, str) else result
+    return _parse_gemini_json(result)
+
+
+def _recent_question_texts(db: Session, user: User, section: str, topic: str, limit: int = 15) -> List[str]:
+    """Prior AI-generated question texts this user has already seen on this topic, pulled
+    from question_snapshot JSON across their past sessions - used both to steer the
+    generation prompt away from repeats and as a cheap post-generation duplicate check."""
+    rows = (
+        db.query(CatMockTestQuestion.question_snapshot)
+        .join(CatMockTestSession, CatMockTestQuestion.session_id == CatMockTestSession.id)
+        .filter(
+            CatMockTestSession.user_id == user.id,
+            CatMockTestQuestion.question_snapshot.isnot(None),
+        )
+        .order_by(CatMockTestSession.created_at.desc())
+        .limit(200)
+        .all()
+    )
+    texts: List[str] = []
+    for (snapshot,) in rows:
+        if not snapshot or snapshot.get("section") != section or snapshot.get("topic") != topic:
+            continue
+        text = snapshot.get("question_text")
+        if text:
+            texts.append(text)
+        if len(texts) >= limit:
+            break
+    return texts
+
+
+def _is_near_duplicate(candidate_text: str, prior_texts: List[str]) -> bool:
+    normalized = " ".join(candidate_text.lower().split())[:80]
+    for prior in prior_texts:
+        if " ".join(prior.lower().split())[:80] == normalized:
+            return True
+    return False
+
+
+def _verify_ai_question(data: dict) -> bool:
+    """Independently re-solve the generated question via a separate Gemini call and
+    check it against the claimed answer. Not a substitute for a human re-deriving the
+    answer by hand - it catches obvious arithmetic/setup slips but a misconception
+    shared by both calls would slip through."""
+    prompt = build_verification_prompt(
+        data.get("question_text", ""), data.get("options"), data.get("correct_answer", "")
+    )
+    try:
+        result = gemini_key_manager.generate_content(prompt, purpose="cat_question_verify")
+        parsed = _parse_gemini_json(result)
+        return bool(parsed.get("matches"))
+    except Exception:
+        return False
+
+
+def _generate_custom_topic_questions(
+    db: Session, user: User, section: str, topics: List[str], count: int, style: str
+) -> List[dict]:
+    """Generate `count` user-topic-driven questions for a custom practice session,
+    round-robining across the picked topics. Each slot is generated, independently
+    verified, and checked against the user's recent question history, retrying up to
+    CUSTOM_GENERATION_MAX_ATTEMPTS times; a slot that still fails is skipped rather than
+    shipping an unverified or duplicate question, so the final count may come in
+    slightly under `count`."""
+    if not topics:
+        return []
+
+    results: List[dict] = []
+    for i in range(count):
+        topic = topics[i % len(topics)]
+        difficulty = "hard" if style == "challenging" else random.choice(DIFFICULTIES)
+        # Real CAT VARC has no TITA format at all - every VARC question is MCQ. QA and
+        # DILR both have a real TITA share in the bank (~35% and ~37% respectively).
+        question_type = (
+            CatQuestionType.TITA.value
+            if section in ("QA", "DILR") and random.random() < 0.35
+            else CatQuestionType.MCQ.value
+        )
+        avoid = _recent_question_texts(db, user, section, topic)
+
+        for attempt in range(CUSTOM_GENERATION_MAX_ATTEMPTS):
+            if attempt > 0:
+                # Give transient upstream rate-limiting ("high demand") a chance to
+                # pass before hammering the same cooled-down keys again.
+                time.sleep(5)
+            try:
+                prompt = build_cat_question_prompt(
+                    section, topic, difficulty, question_type, style=style, avoid_questions=avoid
+                )
+                result = gemini_key_manager.generate_content(prompt, purpose=f"cat_custom_question:{topic}")
+                data = _parse_gemini_json(result)
+            except Exception:
+                continue
+
+            question_text = data.get("question_text", "")
+            if not question_text or _is_near_duplicate(question_text, avoid):
+                avoid = avoid + [question_text] if question_text else avoid
+                continue
+            if not _verify_ai_question(data):
+                continue
+
+            data.setdefault("topic", topic)
+            data.setdefault("difficulty", difficulty)
+            results.append(data)
+            break
+
+    return results
 
 
 def assemble_mock_test(
@@ -174,6 +381,8 @@ def assemble_mock_test(
     question_source: str = CatQuestionSourcePreference.MIXED.value,
     pyq_source_year: Optional[int] = None,
     pyq_source_slot: Optional[str] = None,
+    topics: Optional[List[str]] = None,
+    question_style: str = "standard",
 ) -> CatMockTestSession:
     """Populate `session` (creating one if not given) with a full set of
     CatMockTestQuestion rows for each requested section. `question_source` controls the
@@ -191,6 +400,8 @@ def assemble_mock_test(
             question_source=question_source,
             pyq_source_year=pyq_source_year,
             pyq_source_slot=pyq_source_slot,
+            topics=topics,
+            question_style=question_style,
             status=CatMockTestStatus.GENERATING,
         )
         db.add(session)
@@ -200,6 +411,42 @@ def assemble_mock_test(
     order_index = 0
     for section in sections:
         total_count = SECTION_QUESTION_COUNTS.get(section, 0)
+
+        if getattr(session, "topics", None):
+            # User-driven custom topic practice (QA only) - bypass the usual bank/random-topic
+            # mix entirely: every question in this section comes from the verified,
+            # non-repeating generation loop instead.
+            custom_questions = _generate_custom_topic_questions(
+                db,
+                user,
+                section,
+                session.topics,
+                session.question_count or total_count,
+                session.question_style or "standard",
+            )
+            for data in custom_questions:
+                snapshot = {
+                    "section": section,
+                    "question_type": "TITA" if data.get("options") is None else "MCQ",
+                    "topic": data.get("topic"),
+                    "difficulty": data.get("difficulty"),
+                    "source": CatQuestionSource.AI_GENERATED.value,
+                    "question_text": data.get("question_text", ""),
+                    "options": data.get("options"),
+                    "correct_answer": data.get("correct_answer", ""),
+                    "explanation": data.get("explanation", ""),
+                }
+                db.add(
+                    CatMockTestQuestion(
+                        session_id=session.id,
+                        question_id=None,
+                        order_index=order_index,
+                        question_snapshot=snapshot,
+                        was_skipped=False,
+                    )
+                )
+                order_index += 1
+            continue
 
         if question_source == CatQuestionSourcePreference.AI_ONLY.value:
             bank_count = 0

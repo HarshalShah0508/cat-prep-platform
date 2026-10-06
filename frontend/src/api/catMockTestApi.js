@@ -2,10 +2,32 @@ import client from './client'
 
 const BASE = '/cat/mock-tests'
 
-export function startMockTest({ test_type, sections, question_source, pyq_source_year, pyq_source_slot }) {
+export function startMockTest({
+  test_type,
+  sections,
+  question_source,
+  pyq_source_year,
+  pyq_source_slot,
+  topics,
+  question_style,
+  question_count,
+}) {
   return client
-    .post(`${BASE}/start`, { test_type, sections, question_source, pyq_source_year, pyq_source_slot })
+    .post(`${BASE}/start`, {
+      test_type,
+      sections,
+      question_source,
+      pyq_source_year,
+      pyq_source_slot,
+      topics,
+      question_style,
+      question_count,
+    })
     .then((res) => res.data)
+}
+
+export function getTopicOptions(section) {
+  return client.get(`${BASE}/topic-options`, { params: { section } }).then((res) => res.data)
 }
 
 export function getMockTestStatus(id) {

@@ -10,6 +10,11 @@ class MockTestStartRequest(BaseModel):
     question_source: str = "mixed"
     pyq_source_year: Optional[int] = None
     pyq_source_slot: Optional[str] = None
+    # Custom topic practice (QA only for now): the topics the user picked, and whether to
+    # generate the harder, multi-step, non-direct "challenging" style instead of "standard".
+    topics: Optional[List[str]] = None
+    question_style: Optional[str] = "standard"
+    question_count: Optional[int] = None
 
 
 class MockTestStartResponse(BaseModel):

@@ -99,6 +99,20 @@ def start_mock_test(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    if payload.topics:
+        if len(payload.sections) != 1 or payload.sections[0] not in cat_mock_test_service.TOPIC_OPTIONS_BY_SECTION:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Custom topic practice is only available for a single QA or VARC section right now.",
+            )
+        valid_options = cat_mock_test_service.TOPIC_OPTIONS_BY_SECTION[payload.sections[0]]
+        unknown = set(payload.topics) - set(valid_options)
+        if unknown:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Unknown topic(s): {', '.join(sorted(unknown))}",
+            )
+
     session = CatMockTestSession(
         user_id=current_user.id,
         test_type=payload.test_type,
@@ -106,6 +120,9 @@ def start_mock_test(
         question_source=payload.question_source,
         pyq_source_year=payload.pyq_source_year,
         pyq_source_slot=payload.pyq_source_slot,
+        topics=payload.topics,
+        question_style=payload.question_style or "standard",
+        question_count=payload.question_count,
         status=CatMockTestStatus.GENERATING,
     )
     db.add(session)
@@ -115,6 +132,17 @@ def start_mock_test(
     background_tasks.add_task(worker.run, session.id)
 
     return MockTestStartResponse(session_id=session.id, status=session.status.value)
+
+
+@router.get("/topic-options", response_model=Dict[str, List[str]])
+def get_topic_options(section: str):
+    groups = cat_mock_test_service.TOPIC_GROUPS_BY_SECTION.get(section)
+    if groups is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"No topic options available for section '{section}'.",
+        )
+    return groups
 
 
 @router.get("/{session_id}/status", response_model=MockTestStatusResponse)
