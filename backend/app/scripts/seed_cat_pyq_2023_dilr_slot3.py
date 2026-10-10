@@ -8,9 +8,10 @@ after each slot while under extraction" - Slot 3 was simply never
 finished (not a deliberate chart-dependency skip, unlike most of this
 year/section's other gaps).
 
-Set 2 (six police stations connected by streets "as shown below") is
-chart/diagram-dependent - the connecting topology is never given in text,
-so it's skipped here, not fabricated.
+Set 2 (six police stations connected by streets "as shown below") was
+chart/diagram-dependent - the connecting topology was never given in text.
+Topology confirmed from the user-supplied diagram: B-A, A-C, A-F, A-E,
+F-E, E-D, C-D. Now included.
 
 `correct_answer`/`explanation` are intentionally left blank for now - the
 answer key is loaded separately once transcribed from the solutions PDFs.
@@ -59,6 +60,26 @@ _REG_PASSAGE = (
     "Online 40 100 80\n"
     "Offline 30 80 50\n"
     "Total 110 130 120"
+)
+
+_POLICE_PASSAGE = (
+    "A, B, C, D, E, and F are the six police stations in an area, which are connected by "
+    "streets as shown below. Four teams - Team 1, Team 2, Team 3 and Team 4 - patrol these "
+    "streets continuously between 09:00 hrs. and 12:00 hrs. each day.\n\n"
+    "The street network: B connects only to A. A connects to B, C, F and E. C connects to A "
+    "and D. F connects to A and E. E connects to A, F and D. D connects to C and E.\n\n"
+    "The teams need 30 minutes to cross a street connecting one police station to another. "
+    "All four teams start from Station A at 09:00 hrs. and must return to Station A by 12:00 "
+    "hrs. They can also pass via Station A at any point on their journeys.\n"
+    "The following facts are known.\n"
+    "1. None of the streets has more than one team traveling along it in any direction at any "
+    "point in time.\n"
+    "2. Teams 2 and 3 are the only ones in stations E and D respectively at 10:00 hrs.\n"
+    "3. Teams 1 and 3 are the only ones in station E at 10:30 hrs.\n"
+    "4. Teams 1 and 4 are the only ones in stations B and E respectively at 11:30 hrs.\n"
+    "5. Team 1 and Team 4 are the only teams that patrol the street connecting stations A and "
+    "E.\n"
+    "6. Team 4 never passes through Stations B, D or F."
 )
 
 _SCORES_PASSAGE = (
@@ -135,6 +156,39 @@ QUESTIONS = [
         "II. February and May",
         options=["Only II", "Only I", "Both I and II", "Neither I nor II"],
         passage=_REG_PASSAGE,
+    ),
+    q(
+        "cat2023_dilr_slot3_set2",
+        "MCQ",
+        "Which one among the following stations is visited the largest number of times?",
+        options=["Station F", "Station D", "Station E", "Station C"],
+        passage=_POLICE_PASSAGE,
+    ),
+    q(
+        "cat2023_dilr_slot3_set2",
+        "TITA",
+        "How many times do the teams pass through Station B in a day?",
+        passage=_POLICE_PASSAGE,
+    ),
+    q(
+        "cat2023_dilr_slot3_set2",
+        "MCQ",
+        "Which team patrols the street connecting Stations D and E at 10:15 hrs?",
+        options=["Team 4", "Team 1", "Team 3", "Team 2"],
+        passage=_POLICE_PASSAGE,
+    ),
+    q(
+        "cat2023_dilr_slot3_set2",
+        "TITA",
+        "How many times does Team 4 pass through Station E in a day?",
+        passage=_POLICE_PASSAGE,
+    ),
+    q(
+        "cat2023_dilr_slot3_set2",
+        "MCQ",
+        "How many teams pass through Station C in a day?",
+        options=["2", "4", "3", "1"],
+        passage=_POLICE_PASSAGE,
     ),
     q(
         "cat2023_dilr_slot3_set3",

@@ -2,8 +2,27 @@
 solutions PDFs via pdftotext + pyq_dilr_parser.py (automated
 text-layer extraction, not LLM transcription).
 
-Sets that are chart/diagram-dependent (the passage text only refers to "the figure above" etc. with no recoverable data) are intentionally 
+Sets that are chart/diagram-dependent (the passage text only refers to "the figure above" etc. with no recoverable data) are intentionally
 omitted here, not fabricated - see stderr output from the generation step for which sets were skipped.
+Slot 3 Set 4 (Gantt-chart employee schedule, Abani/Bahni/Danni/Tinni under Dhoni) was one
+such skip - month ranges and completion percentages now reconstructed from a user-supplied
+chart image (marked "~" in the passage as an approximate read) and included. One MCQ's 4th
+option (Q17) was never visible in any supplied answer key; it is inferred by elimination
+since CAT's standard 4-option set for this statement format is {Only I, Only II, Both,
+Neither} and the other three were shown. Two further options (Q18's 4th, Q19's 4th) were
+cut off in the supplied screenshots and are invented distractors, not transcribed text -
+their exact wording should not be trusted, only the correct answer for each (confirmed via
+the visible checkmark) is reliable.
+
+Slot 2 Set 1 (shipping-categories Gantt chart, 14 categories booked Sep 1-14) was also
+originally skipped as chart-dependent. The source solutions PDF for this slot is itself
+low-quality/auto-generated (Q2's own "solution" admits it can't compute the actual answer
+without the chart data). Now included using the exam's own instruction text, worked example,
+and a booking-day list that IS given verbatim inside that same low-quality solutions PDF
+(Step 1 of the Q1 solution) - that day list is reused here as the closest thing to a reliable
+source for this set's chart data, cross-checked against a user-supplied image of the chart.
+Exact dispatch days and ship-mode colours per bar beyond what's stated are not independently
+verified pixel-by-pixel.
 
 `correct_answer`/`explanation` are intentionally left blank for now - the answer key
 is loaded separately once transcribed from the solutions PDFs.
@@ -56,12 +75,91 @@ QUESTIONS += [
     q("cat2021_dilr_slot1_set3", _slot, "MCQ", "What BEST can be concluded about the total number of units of milk the three women had in the beginning?", options=["Either 18 or 19 or 20 units.", "Either 17 or 18 or 19 units.", "Either 18 or 19 units.", "Either 19 or 20 units."], passage="Ganga, Kaveri, and Narmada are three women who buy four raw materials (Mango, Apple, Banana and Milk) and sell five finished products (Mango smoothie, Apple smoothie, Banana smoothie, Mixed fruit smoothie and Fruit salad). Table-1 gives information about the raw materials required to produce the five finished products. One unit of a finished product requires one unit of each of the raw materials mentioned in the second column of the table.\n\nFinished product          Raw materials required Mango smoothie            Mango, Milk Apple smoothie           Apple, Milk Table-1 Banana smoothie           Banana, Milk Mixed fruit smoothie Mango, Apple, Banana, Milk Fruit salad            Mango, Apple, Banana One unit of milk, mango, apple, and banana cost |5, |3, |2, and |1 respectively. Each unit of a finished product is sold for a profit equal to two times the number of raw materials used to make that product. For example, apple smoothie is made with two raw materials (apple and milk) and will be sold for a profit of |4 per unit. Leftover raw materials are sold during the last business hour of the day for a loss of |1 per unit. The amount, in rupees, received from sales (revenue) for each woman in each of the four business hours of the day is given in Table-2.\n\nBusiness Hour       Ganga Kaveri Narmada Hour 1               23       19       31 Table-2         Hour 2               21       22       21 Hour 3               29       30       29 Hour 4 (last hour)        30       27       22\n\nThe following additional facts are known:\n\n1. No one except possibly Ganga sold any Mango smoothie.\n\n2. Each woman sold either zero or one unit of any single finished product in any hour.\n\n3. Each woman had exactly one unit each of two different raw materials as leftovers.\n\n4. No one had any banana leftover."),
     q("cat2021_dilr_slot1_set4", _slot, "MCQ", "The total sales (in |million) in 2019 from products in office supplies category is closest to", options=["16.5", "13.5", "18.0", "12.5"], passage="The horizontal bars in the above diagram represent 2020 aggregate sales (in |million) of a company for the different subcategories of its products.\n\nThe top four product subcategories (Bookcases, Chairs, Furnishings, Tables) belong to the furniture product category; The bottom four product subcategories (Accessories, Copiers, Machines, Phones) belong to the technology product category; While all other product subcategories belong to the office supply product category. For each of the product subcategories, there is a vertical line indicating the sales of the corresponding subcategory in 2019."),
     q("cat2021_dilr_slot1_set4", _slot, "MCQ", "The percentage increase in sales in Furniture category from 2019 to 2020 is closest to", options=["20%", "2.8%", "1%", "25%"], passage="The horizontal bars in the above diagram represent 2020 aggregate sales (in |million) of a company for the different subcategories of its products.\n\nThe top four product subcategories (Bookcases, Chairs, Furnishings, Tables) belong to the furniture product category; The bottom four product subcategories (Accessories, Copiers, Machines, Phones) belong to the technology product category; While all other product subcategories belong to the office supply product category. For each of the product subcategories, there is a vertical line indicating the sales of the corresponding subcategory in 2019."),
+    q("cat2021_dilr_slot1_set4", _slot, "TITA", "How many subcategories had sales of |4 million or more in 2019 and registered an increase in sales in excess of 25% in 2020?", options=None, passage="The horizontal bars in the above diagram represent 2020 aggregate sales (in |million) of a company for the different subcategories of its products.\n\nThe top four product subcategories (Bookcases, Chairs, Furnishings, Tables) belong to the furniture product category; The bottom four product subcategories (Accessories, Copiers, Machines, Phones) belong to the technology product category; While all other product subcategories belong to the office supply product category. For each of the product subcategories, there is a vertical line indicating the sales of the corresponding subcategory in 2019."),
     q("cat2021_dilr_slot1_set4", _slot, "MCQ", "The improvement index for a category is the maximum percentage increase in sales from 2019 to 2020 among any of its subcategories. The correct order of categories in increasing order of this improvement index is:", options=["office supply, furniture, technology", "technology, furniture, office supply", "office supply, technology, furniture", "furniture, technology, office supply"], passage="The horizontal bars in the above diagram represent 2020 aggregate sales (in |million) of a company for the different subcategories of its products.\n\nThe top four product subcategories (Bookcases, Chairs, Furnishings, Tables) belong to the furniture product category; The bottom four product subcategories (Accessories, Copiers, Machines, Phones) belong to the technology product category; While all other product subcategories belong to the office supply product category. For each of the product subcategories, there is a vertical line indicating the sales of the corresponding subcategory in 2019."),
 ]
+
+_SHIPPING_PASSAGE = (
+    "The different bars in the diagram above provide information about different orders in "
+    "various categories (Art, Binders, ....) that were booked in the first two weeks of "
+    "September of a store for one client. The colour and pattern of a bar denotes the ship "
+    "mode (First Class / Second Class / Standard Class). The left end point of a bar "
+    "indicates the booking day of the order, while the right end point indicates the "
+    "dispatch day of the order. The difference between the dispatch day and the booking day "
+    "(measured in terms of the number of days) is called the processing time of the order. "
+    "For the same category, an order is considered for booking only after the previous order "
+    "of the same category is dispatched. No two consecutive orders of the same category had "
+    "identical ship mode during this period.\n\n"
+    "For example, there were only two orders in the furnishing category during this period. "
+    "The first one was shipped in the Second Class. It was booked on Sep 1 and dispatched on "
+    "Sep 5. The second order was shipped in the Standard class. It was booked on Sep 5 "
+    "(although the order might have been placed before that) and dispatched on Sep 12. So "
+    "the processing times were 4 and 7 days respectively for these orders.\n\n"
+    "Booking days read off the chart for Sep 1 - Sep 14 (left endpoints of bars; a category "
+    "not listed on a given day had no order booked that day). Where a category's first bar "
+    "touches the Sep 1 edge of the chart but is not listed as booked on Sep 1 below, that "
+    "order was already in progress before the chart's window began:\n"
+    "- Sep 1: Appliances, Furnishings, Tables\n"
+    "- Sep 2: Accessories\n"
+    "- Sep 3: Bookcases, Phones\n"
+    "- Sep 4: Chairs\n"
+    "- Sep 5: Storage, Furnishings (2nd order)\n"
+    "- Sep 6: Fasteners\n"
+    "- Sep 7: Paper\n"
+    "- Sep 8: Labels\n"
+    "- Sep 9: Bookcases (2nd order)\n"
+    "- Sep 10: Binders\n"
+    "- Sep 11: Appliances (2nd order)\n"
+    "- Sep 13: Art\n"
+    "- Sep 14: Accessories (2nd order)\n\n"
+    "(No bookings occurred on Sep 12 in this window.) The chart also shows each bar's ship "
+    "mode by colour (red = First Class, black = Second Class, green = Standard Class) and "
+    "each bar's right-edge dispatch day, running out to Sep 23 for the categories with "
+    "longer-running orders (Art, Binders, Accessories, Storage among them)."
+)
 
 # ============================================================ SLOT 2 ====
 _slot = "slot2"
 QUESTIONS += [
+    q(
+        "cat2021_dilr_slot2_set1",
+        _slot,
+        "TITA",
+        "How many days between Sep 1 and Sep 14 (both inclusive) had no booking from this "
+        "client considering all the above categories?",
+        passage=_SHIPPING_PASSAGE,
+    ),
+    q(
+        "cat2021_dilr_slot2_set1",
+        _slot,
+        "TITA",
+        "What was the average processing time of all orders in the categories which had only "
+        "one type of ship mode?",
+        passage=_SHIPPING_PASSAGE,
+    ),
+    q(
+        "cat2021_dilr_slot2_set1",
+        _slot,
+        "MCQ",
+        "The sequence of categories -- Art, Binders, Paper and Phones -- in decreasing order "
+        "of average processing time of their orders in this period is:",
+        options=[
+            "Art, Binders, Paper, Phones",
+            "Phones, Art, Binders, Paper",
+            "Phones, Binders, Art, Paper",
+            "Paper, Binders, Art, Phones",
+        ],
+        passage=_SHIPPING_PASSAGE,
+    ),
+    q(
+        "cat2021_dilr_slot2_set1",
+        _slot,
+        "MCQ",
+        "Approximately what percentage of orders had a processing time of one day during the "
+        "period Sep 1 to Sep 22 (both dates inclusive)?",
+        options=["22%", "16%", "20%", "25%"],
+        passage=_SHIPPING_PASSAGE,
+    ),
     q("cat2021_dilr_slot2_set2", _slot, "MCQ", "What BEST can be said about object o8?", options=["o8 was given to Amar, Charles, or Disha", "o8 was given to Disha", "o8 was given to Charles", "o8 was given to Charles or Disha"], passage="Ten objects o1, 02, ... , 010 were distributed among Amar, Barat, Charles, Disha, and Elise. Each item went to exactly one person. Each person got exactly two of the items, and this pair of objects is called her/his bundle.\n\nThe following table shows how each person values each object.\n\nThe value of any bundle by a person is the sum of that person’s values of the objects in that\n\nbundle. A person X envies another person Y if X values Y’s bundle more than X’s own bundle.\n\nFor example, hypothetically suppose Amar’s bundle consists of o1 and o2, and Barat’s bundle consists of 03 and 04. Then Amar values his own bundle at 4 + 9 = 13 and Barat’s bundle at 9 + 3 =12. Hence Amar does not envy Barat. On the other hand, Barat values his own bundle at 7 + 5 = 12 and Amar’s bundle at 5 + 9 = 14. Hence Barat envies Amar.\n\nThe following facts are known about the actual distribution of the objects among the five people.\n\n1. If someone’s value for an object is 10, then she/he received that object. 2. Objects o1, o2, and 03 were given to three different people. 3. Objects o1 and 08 were given to different people. 4. Three people value their own bundles at 16. No one values her/his own bundle at a number higher than 16. 5. Disha values her own bundle at an odd number. All others value their own bundles at an even number. 6. Some people who value their own bundles less than 16 envy some other people who value their own bundle at 16. No one else envies others."),
     q("cat2021_dilr_slot2_set2", _slot, "MCQ", "Who among the following envies someone else?", options=["Barat", "Charles", "Amar", "Elise"], passage="Ten objects o1, 02, ... , 010 were distributed among Amar, Barat, Charles, Disha, and Elise. Each item went to exactly one person. Each person got exactly two of the items, and this pair of objects is called her/his bundle.\n\nThe following table shows how each person values each object.\n\nThe value of any bundle by a person is the sum of that person’s values of the objects in that\n\nbundle. A person X envies another person Y if X values Y’s bundle more than X’s own bundle.\n\nFor example, hypothetically suppose Amar’s bundle consists of o1 and o2, and Barat’s bundle consists of 03 and 04. Then Amar values his own bundle at 4 + 9 = 13 and Barat’s bundle at 9 + 3 =12. Hence Amar does not envy Barat. On the other hand, Barat values his own bundle at 7 + 5 = 12 and Amar’s bundle at 5 + 9 = 14. Hence Barat envies Amar.\n\nThe following facts are known about the actual distribution of the objects among the five people.\n\n1. If someone’s value for an object is 10, then she/he received that object. 2. Objects o1, o2, and 03 were given to three different people. 3. Objects o1 and 08 were given to different people. 4. Three people value their own bundles at 16. No one values her/his own bundle at a number higher than 16. 5. Disha values her own bundle at an odd number. All others value their own bundles at an even number. 6. Some people who value their own bundles less than 16 envy some other people who value their own bundle at 16. No one else envies others."),
     q("cat2021_dilr_slot2_set2", _slot, "TITA", "What is Amar’s value for his own bundle?", options=None, passage="Ten objects o1, 02, ... , 010 were distributed among Amar, Barat, Charles, Disha, and Elise. Each item went to exactly one person. Each person got exactly two of the items, and this pair of objects is called her/his bundle.\n\nThe following table shows how each person values each object.\n\nThe value of any bundle by a person is the sum of that person’s values of the objects in that\n\nbundle. A person X envies another person Y if X values Y’s bundle more than X’s own bundle.\n\nFor example, hypothetically suppose Amar’s bundle consists of o1 and o2, and Barat’s bundle consists of 03 and 04. Then Amar values his own bundle at 4 + 9 = 13 and Barat’s bundle at 9 + 3 =12. Hence Amar does not envy Barat. On the other hand, Barat values his own bundle at 7 + 5 = 12 and Amar’s bundle at 5 + 9 = 14. Hence Barat envies Amar.\n\nThe following facts are known about the actual distribution of the objects among the five people.\n\n1. If someone’s value for an object is 10, then she/he received that object. 2. Objects o1, o2, and 03 were given to three different people. 3. Objects o1 and 08 were given to different people. 4. Three people value their own bundles at 16. No one values her/his own bundle at a number higher than 16. 5. Disha values her own bundle at an odd number. All others value their own bundles at an even number. 6. Some people who value their own bundles less than 16 envy some other people who value their own bundle at 16. No one else envies others."),
@@ -79,6 +177,43 @@ QUESTIONS += [
     q("cat2021_dilr_slot2_set4", _slot, "MCQ", "In which parameter did Atal give the maximum rating points to Ravi?", options=["Hygiene", "Behaviour", "Timeliness", "Packaging"], passage="Ravi works in an online food-delivery company. After each delivery, customers rate Ravi on each of four parameters - Behaviour, Packaging, Hygiene, and Timeliness, on a scale from 1 to 9. If the total of the four rating points is 25 or more, then Ravi gets a bonus of 20 for that delivery. Additionally, a customer may or may not give Ravi a tip. If the customer gives a tip, it is either 30 or 50.\n\nOne day, Ravi made four deliveries - one to each of Atal, Bihari, Chirag, and Deepak, and received a total of 120 in bonus and tips. He did not get both a bonus and a tip from the same customer.\n\nThe following additional facts are also known.\n\n1. In Timeliness, Ravi received a total of 21 points, and three of the customers gave him the same rating points in this parameter. Atal gave higher rating points than Bihari and Chirag in this parameter. 2. Ravi received distinct rating points in Packaging from the four customers adding up to 29 points. Similarly, Ravi received distinct rating points in Hygiene from the four customers\n\nadding up to 26 points. 3. Chirag gave the same rating points for Packaging and Hygiene. 4. Among the four customers, Bihari gave the highest rating points in Packaging, and Chirag gave the highest rating points in Hygiene. 5. Everyone rated Ravi between 5 and 7 in Behaviour. Unique maximum and minimum rat- ings in this parameter were given by Atal and Deepak respectively. 6. If the customers are ranked based on ratings given by them in individual parameters, then Atal’s rank based on Packaging is the same as that based on Hygiene. This is also true for Deepak."),
     q("cat2021_dilr_slot2_set4", _slot, "MCQ", "What rating did Deepak give on Packaging?", options=["7", "8", "5", "6"], passage="Ravi works in an online food-delivery company. After each delivery, customers rate Ravi on each of four parameters - Behaviour, Packaging, Hygiene, and Timeliness, on a scale from 1 to 9. If the total of the four rating points is 25 or more, then Ravi gets a bonus of 20 for that delivery. Additionally, a customer may or may not give Ravi a tip. If the customer gives a tip, it is either 30 or 50.\n\nOne day, Ravi made four deliveries - one to each of Atal, Bihari, Chirag, and Deepak, and received a total of 120 in bonus and tips. He did not get both a bonus and a tip from the same customer.\n\nThe following additional facts are also known.\n\n1. In Timeliness, Ravi received a total of 21 points, and three of the customers gave him the same rating points in this parameter. Atal gave higher rating points than Bihari and Chirag in this parameter. 2. Ravi received distinct rating points in Packaging from the four customers adding up to 29 points. Similarly, Ravi received distinct rating points in Hygiene from the four customers\n\nadding up to 26 points. 3. Chirag gave the same rating points for Packaging and Hygiene. 4. Among the four customers, Bihari gave the highest rating points in Packaging, and Chirag gave the highest rating points in Hygiene. 5. Everyone rated Ravi between 5 and 7 in Behaviour. Unique maximum and minimum rat- ings in this parameter were given by Atal and Deepak respectively. 6. If the customers are ranked based on ratings given by them in individual parameters, then Atal’s rank based on Packaging is the same as that based on Hygiene. This is also true for Deepak."),
 ]
+
+_GANTT_PASSAGE = (
+    "The figure above shows the schedule of four employees - Abani, Bahni, Danni and Tinni - "
+    "whom Dhoni supervised in 2020. Altogether there were five projects which started and "
+    "concluded in 2020 in which they were involved. For each of these projects and for each "
+    "employee, the starting day was at the beginning of a month and the concluding day was "
+    "the end of a month, and these are indicated by the left and right end points of the "
+    "corresponding horizontal bars. The number within each bar indicates the percentage of "
+    "assigned work completed by the employee for that project, as assessed by Dhoni.\n\n"
+    "For each employee, his/her total project-month (in 2020) is the sum of the number of "
+    "months (s)he worked across the five projects, while his/her annual completion index is "
+    "the weightage average of the completion percentage assigned from the different projects, "
+    "with the weights being the corresponding number of months (s)he worked in these "
+    "projects. For each project, the total employee-month is the sum of the number of months "
+    "four employees worked in this project, while its completion index is the weightage "
+    "average of the completion percentage assigned for the employees who worked in this "
+    "project, with the weights being the corresponding number of months they worked in this "
+    "project.\n\n"
+    "The schedule (month range read off the Gantt chart; ~ marks a bar whose exact month "
+    "boundary is only an approximate read of the original chart image):\n\n"
+    "| Project | Employee | Months worked | Completion |\n"
+    "|---|---|---|---|\n"
+    "| 1 | Abani | ~Feb-Mar | 100% |\n"
+    "| 1 | Bahni | ~Feb-Mar | 100% |\n"
+    "| 1 | Tinni | ~Jan-Feb | 80% |\n"
+    "| 2 | Danni | ~Feb-Apr | 90% |\n"
+    "| 2 | Tinni | ~Mar-Apr | 100% |\n"
+    "| 3 | Abani | ~May-Jun | 100% |\n"
+    "| 3 | Bahni | ~Apr-Jul | 75% |\n"
+    "| 3 | Danni | ~Jun-Jul | 100% |\n"
+    "| 4 | Abani | ~Jul-Nov | 80% |\n"
+    "| 4 | Danni | ~Sep-Oct | 100% |\n"
+    "| 4 | Tinni | ~Jul-Sep | 100% |\n"
+    "| 5 | Bahni | ~Oct-Dec | 90% |\n"
+    "| 5 | Danni | ~Dec | 100% |\n"
+    "| 5 | Tinni | ~Sep-Oct | 100% |"
+)
 
 # ============================================================ SLOT 3 ====
 _slot = "slot3"
@@ -99,6 +234,10 @@ QUESTIONS += [
     q("cat2021_dilr_slot3_set3", _slot, "TITA", "There are four bottles. Each bottle is known to contain only P or only I. They will be considered to be “collectively ready for despatch” if all of them contain only P. In minimum how many tests, is it possible to ascertain whether these four bottles are “collectively ready for despatch”?\n\n(Not provided as options were not shown, assume open-ended numeric answer)", options=None, passage="Each of the bottles mentioned in this question contains 50 ml of liquid. The liquid in any bottle can be 100% pure content (P) or can have certain amount of impurity (I). Visually it is not possible to distinguish between P and I. There is a testing device which detects impurity, as long as the percentage of impurity in the content tested is 10% or more.\n\nFor example, suppose bottle 1 contains only P, and bottle 2 contains 80% P and 20% I. If content from bottle 1 is tested, it will be found out that it contains only P. If content of bottle 2 is tested, the test will reveal that it contains some amount of I. If 10 ml of content from bottle 1 is mixed with 20 ml content from bottle 2, the test will show that the mixture has impurity, and hence we can conclude that at least one of the two bottles has I. However, if 10 ml of content from bottle 1 is mixed with 5 ml of content from bottle 2. the test will not detect any impurity in the resultant mixture."),
     q("cat2021_dilr_slot3_set3", _slot, "TITA", "There are four bottles. It is known that three of these bottles contain only P, while the remaining one contains 80% P and 20% I. What is the minimum number of tests required to definitely identify the bottle containing some amount of I?\n\n(Not shown)", options=None, passage="Each of the bottles mentioned in this question contains 50 ml of liquid. The liquid in any bottle can be 100% pure content (P) or can have certain amount of impurity (I). Visually it is not possible to distinguish between P and I. There is a testing device which detects impurity, as long as the percentage of impurity in the content tested is 10% or more.\n\nFor example, suppose bottle 1 contains only P, and bottle 2 contains 80% P and 20% I. If content from bottle 1 is tested, it will be found out that it contains only P. If content of bottle 2 is tested, the test will reveal that it contains some amount of I. If 10 ml of content from bottle 1 is mixed with 20 ml content from bottle 2, the test will show that the mixture has impurity, and hence we can conclude that at least one of the two bottles has I. However, if 10 ml of content from bottle 1 is mixed with 5 ml of content from bottle 2. the test will not detect any impurity in the resultant mixture."),
     q("cat2021_dilr_slot3_set3", _slot, "MCQ", "There are four bottles. It is known that either one or two of these bottles contain(s) only P, while the remaining ones contain 85% P and 15% I. What is the minimum number of tests required to ascertain the exact number of bottles containing only P?", options=["4", "3", "2"], passage="Each of the bottles mentioned in this question contains 50 ml of liquid. The liquid in any bottle can be 100% pure content (P) or can have certain amount of impurity (I). Visually it is not possible to distinguish between P and I. There is a testing device which detects impurity, as long as the percentage of impurity in the content tested is 10% or more.\n\nFor example, suppose bottle 1 contains only P, and bottle 2 contains 80% P and 20% I. If content from bottle 1 is tested, it will be found out that it contains only P. If content of bottle 2 is tested, the test will reveal that it contains some amount of I. If 10 ml of content from bottle 1 is mixed with 20 ml content from bottle 2, the test will show that the mixture has impurity, and hence we can conclude that at least one of the two bottles has I. However, if 10 ml of content from bottle 1 is mixed with 5 ml of content from bottle 2. the test will not detect any impurity in the resultant mixture."),
+    q("cat2021_dilr_slot3_set4", _slot, "MCQ", "Which of the following statements is/are true?\nI: The total project-month was the same for the four employees.\nII: The total employee-month was the same for the five projects.", options=["Only II", "Neither I nor II", "Both I and II", "Only I"], passage=_GANTT_PASSAGE),
+    q("cat2021_dilr_slot3_set4", _slot, "MCQ", "Which employees did not work in multiple projects for any of the months in 2020?", options=["Only Tinni", "All four of them", "Only Abani, Bahni and Danni", "Only Bahni, Danni and Tinni"], passage=_GANTT_PASSAGE),
+    q("cat2021_dilr_slot3_set4", _slot, "MCQ", "The project duration, measured in terms of the number of months, is the time during which at least one employee worked in the project. Which of the following pairs of the projects had the same duration?", options=["Project 3, Project 4", "Project 1, Project 5", "Project 3, Project 5", "Project 1, Project 4"], passage=_GANTT_PASSAGE),
+    q("cat2021_dilr_slot3_set4", _slot, "MCQ", "The list of employees in decreasing order of annual completion index is:", options=["Danni, Tinni, Abani, Bahni", "Tinni, Danni, Abani, Bahni", "Danni, Tinni, Bahni, Abani", "Bahni, Abani, Tinni, Danni"], passage=_GANTT_PASSAGE),
 ]
 
 

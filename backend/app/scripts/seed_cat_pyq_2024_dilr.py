@@ -83,6 +83,93 @@ QUESTIONS = []
 # ============================================================ SLOT 1 ====
 _slot = "slot1"
 
+_g = "cat2024_slot1_dilr_set1"
+_passage = (
+    "The chart below provides complete information about the number of countries visited "
+    "by Dheeraj, Samantha and Nitesh, in Asia, Europe and the rest of the world (ROW).\n\n"
+    "Number of countries visited, by person and region:\n"
+    "| | Asia | Europe | ROW |\n"
+    "|---|---|---|---|\n"
+    "| Dheeraj | 3 | 7 | 1 |\n"
+    "| Samantha | 0 | 9 | 4 |\n"
+    "| Nitesh | 1 | 6 | 12 |\n\n"
+    "The following additional facts are known about the countries visited by them.\n"
+    "1. 32 countries were visited by at least one of them.\n"
+    "2. USA (in ROW) is the only country that was visited by all three of them.\n"
+    "3. China (in Asia) is the only country that was visited by both Dheeraj and Nitesh, "
+    "but not by Samantha.\n"
+    "4. France (in Europe) is the only country outside Asia, which was visited by both "
+    "Dheeraj and Samantha, but not by Nitesh.\n"
+    "5. Half of the countries visited by both Samantha and Nitesh are in Europe."
+)
+QUESTIONS += [
+    q(
+        _g, _slot, "Countries Visited Venn Logic", "TITA",
+        "How many countries in Asia were visited by at least one of Dheeraj, Samantha, and "
+        "Nitesh?",
+        passage=_passage,
+    ),
+    q(
+        _g, _slot, "Countries Visited Venn Logic", "TITA",
+        "How many countries in Europe were visited only by Nitesh?",
+        passage=_passage,
+    ),
+    q(
+        _g, _slot, "Countries Visited Venn Logic", "TITA",
+        "How many countries in the ROW were visited by both Nitesh and Samantha?",
+        passage=_passage,
+    ),
+    q(
+        _g, _slot, "Countries Visited Venn Logic", "MCQ",
+        "How many countries in Europe were visited by exactly one of Dheeraj, Samantha, and "
+        "Nitesh?",
+        options=["10", "12", "5", "14"],
+        passage=_passage,
+    ),
+]
+
+_g = "cat2024_slot1_dilr_set2"
+_passage = (
+    "Six web surfers M, N, O, P, X, and Y each had 30 stars which they distributed among "
+    "four bloggers A, B, C, and D. The number of stars received by A and B from the six web "
+    "surfers is shown in the figure below.\n\n"
+    "Stars received by A and B, from each surfer:\n"
+    "| Surfer | A | B |\n"
+    "|---|---|---|\n"
+    "| M | 10 | 0 |\n"
+    "| N | 25 | 0 |\n"
+    "| O | 0 | 0 |\n"
+    "| P | 5 | 25 |\n"
+    "| X | 0 | 0 |\n"
+    "| Y | 5 | 20 |\n\n"
+    "The following additional facts are known regarding the number of stars received by "
+    "the bloggers from the surfers.\n"
+    "1. The numbers of stars received by the bloggers from the surfers were all multiples "
+    "of 5 (including 0).\n"
+    "2. The total numbers of stars received by the bloggers were the same.\n"
+    "3. Each blogger received a different number of stars from M.\n"
+    "4. Two surfers gave all their stars to a single blogger.\n"
+    "5. D received more stars than C from Y."
+)
+QUESTIONS += [
+    q(
+        _g, _slot, "Bloggers Star Distribution", "TITA",
+        "What was the total number of stars received by D?",
+        passage=_passage,
+    ),
+    q(
+        _g, _slot, "Bloggers Star Distribution", "MCQ",
+        "What was the number of stars received by D from Y?",
+        options=["10", "cannot be determined", "5", "0"],
+        passage=_passage,
+    ),
+    q(
+        _g, _slot, "Bloggers Star Distribution", "TITA",
+        "How many surfers distributed their stars among exactly 2 bloggers?",
+        passage=_passage,
+    ),
+]
+
 _g = "cat2024_slot1_dilr_set3"
 _passage = (
     "Two students, Amiya and Ramya are the only candidates in an election for the "
@@ -210,6 +297,42 @@ QUESTIONS += [
      "passage_text": _passage},
 ]
 
+_g = "cat2024_slot2_dilr_set2"
+_passage = (
+    "The numbers 1, 2, 3, 4, 5, 6, 7, 8, 9, and 10 are placed in ten slots of a grid "
+    "based on the conditions below. The grid is staircase-shaped: Row 1 has 4 slots "
+    "(Columns 1-4), Row 2 has 3 slots (Columns 2-4), Row 3 has 2 slots (Columns 3-4), "
+    "and Row 4 has 1 slot (Column 4) - ten slots in total.\n\n"
+    "1. Numbers in any row appear in an increasing order from left to right.\n"
+    "2. Numbers in any column appear in a decreasing order from top to bottom.\n"
+    "3. 1 is placed either in the same row or in the same column as 10.\n"
+    "4. Neither 2 nor 3 is placed in the same row or in the same column as 10.\n"
+    "5. Neither 7 nor 8 is placed in the same row or in the same column as 9.\n"
+    "6. 4 and 6 are placed in the same row."
+)
+QUESTIONS += [
+    {**q(_g, _slot, "Staircase Grid Number Placement", "TITA",
+         "What is the row number which has the least sum of numbers placed in that "
+         "row?"), "passage_text": _passage},
+    {**q(_g, _slot, "Staircase Grid Number Placement", "MCQ",
+         "Which of the following statements MUST be true?\n"
+         "I. 10 is placed in a slot in Row 1.\n"
+         "II. 1 is placed in a slot in Row 4.",
+         ["Only II", "Both I and II", "Neither I nor II", "Only I"]),
+     "passage_text": _passage},
+    {**q(_g, _slot, "Staircase Grid Number Placement", "MCQ",
+         "Which of the following statements MUST be true?\n"
+         "I. 2 is placed in a slot in Column 2.\n"
+         "II. 3 is placed in a slot in Column 3.",
+         ["Only II", "Neither I nor II", "Only I", "Both I and II"]),
+     "passage_text": _passage},
+    {**q(_g, _slot, "Staircase Grid Number Placement", "TITA",
+         "For how many slots in the grid, placement of numbers CANNOT be determined "
+         "with certainty?"), "passage_text": _passage},
+    {**q(_g, _slot, "Staircase Grid Number Placement", "TITA",
+         "What is the sum of the numbers placed in Column 4?"), "passage_text": _passage},
+]
+
 _g = "cat2024_slot2_dilr_set5"
 _passage = (
     "An online e-commerce firm receives daily integer product ratings from 1 through 5 "
@@ -290,6 +413,183 @@ QUESTIONS += [
     {**q(_g, _slot, "GDP and Population Growth DI", "TITA",
          "For how many countries among Country 1 through Country 8 will the GDP per "
          "capita in 2027 be lower than that in 2024?"), "passage_text": _passage},
+]
+
+_g = "cat2024_slot3_dilr_set1"
+_passage = (
+    "The table given below shows the amount, in grams, of carbohydrate, protein, fat, "
+    "and all other nutrients, per 100 grams of nutrients in seven foodgrains. The first "
+    "column shows the foodgrain category and the second column its codename. The table "
+    "has some missing values.\n\n"
+    "| Food grain Category | Codename | Carbohydrate | Protein | Fat | Other nutrients |\n"
+    "|---|---|---|---|---|---|\n"
+    "| Cereal | C1 | ? | ? | 0 | 12 |\n"
+    "| Cereal | C2 | ? | ? | 3 | 10 |\n"
+    "| Millet | M1 | 62 | 10 | ? | ? |\n"
+    "| Millet | M2 | ? | ? | 7 | 16 |\n"
+    "| Millet | M3 | 56 | ? | 12 | ? |\n"
+    "| Pseudo-cereal | P1 | 66 | ? | ? | 10 |\n"
+    "| Pseudo-cereal | P2 | ? | 14 | ? | 8 |\n\n"
+    "The following additional facts are known:\n"
+    "1. Both the pseudo-cereals had higher amounts of carbohydrate as well as higher "
+    "amounts of protein than any millet.\n"
+    "2. Both the cereals had higher amounts of carbohydrate than any pseudo-cereal.\n"
+    "3. All the missing values of carbohydrate amounts (in grams) for all the foodgrains "
+    "are non-zero multiples of 5.\n"
+    "4. All the missing values of protein, fat, and other nutrients amounts (in grams) "
+    "for all the foodgrains are non-zero multiples of 4.\n"
+    "5. P1 contained double the amount of protein that M3 contains."
+)
+QUESTIONS += [
+    {**q(_g, _slot, "Foodgrain Nutrient Composition DI", "TITA",
+         "How many foodgrains had a higher amount of carbohydrate per 100 grams of "
+         "nutrients than M1?"), "passage_text": _passage},
+    {**q(_g, _slot, "Foodgrain Nutrient Composition DI", "TITA",
+         "How many grams of protein were there in 100 grams of nutrients in M2?"),
+     "passage_text": _passage},
+    {**q(_g, _slot, "Foodgrain Nutrient Composition DI", "TITA",
+         "How many grams of other nutrients were there in 100 grams of nutrients in "
+         "M3?"), "passage_text": _passage},
+    {**q(_g, _slot, "Foodgrain Nutrient Composition DI", "TITA",
+         "What is the median of the number of grams of protein in 100 grams of "
+         "nutrients among these food grains?"), "passage_text": _passage},
+]
+
+_g = "cat2024_slot3_dilr_set3"
+_passage = (
+    "The air-conditioner (AC) in a large room can be operated either in REGULAR mode or "
+    "in POWER mode to reduce the temperature.\n\n"
+    "If the AC operates in REGULAR mode, then it brings down the temperature inside the "
+    "room (called inside temperature) at a constant rate to the set temperature in 1 "
+    "hour. If it operates in POWER mode, then this is achieved in 30 minutes.\n\n"
+    "If the AC is switched off, then the inside temperature rises at a constant rate so "
+    "as to reach the temperature outside at the time of switching off in 1 hour.\n\n"
+    "The temperature outside has been falling at a constant rate from 7 pm onward until "
+    "3 am on a particular night. The following graph shows the inside temperature "
+    "between 11 pm (23:00) and 2 am (2:00) that night (reading the plotted vertices): "
+    "23:00 -> 38 degC, descending in a straight line to 0:00 -> 26 degC (no vertex shown "
+    "at 23:30 - the line just passes through that gridline), then up to 0:30 -> 31 degC, "
+    "down to 1:00 -> 26 degC, up to 1:30 -> 30 degC, down to 2:00 -> 28 degC.\n\n"
+    "The following facts are known about the AC operation that night:\n"
+    "- The AC was turned on for the first time that night at 11 pm (23:00).\n"
+    "- The AC setting was changed (including turning it on/off, and/or setting different "
+    "temperatures) only at the beginning of the hour or at 30 minutes after the hour.\n"
+    "- The AC was used in POWER mode for longer duration than in REGULAR mode during "
+    "this 3-hour period."
+)
+QUESTIONS += [
+    {**q(_g, _slot, "AC Temperature Schedule DI", "MCQ",
+         "How many times must the AC have been turned off between 11:01 pm and 1:59 "
+         "am?",
+         ["Cannot be determined", "0", "2", "1"]), "passage_text": _passage},
+    {**q(_g, _slot, "AC Temperature Schedule DI", "TITA",
+         "What was the temperature outside, in degree Celsius, at 1 am?"),
+     "passage_text": _passage},
+    {**q(_g, _slot, "AC Temperature Schedule DI", "TITA",
+         "What was the temperature outside, in degree Celsius, at 9 pm?"),
+     "passage_text": _passage},
+    {**q(_g, _slot, "AC Temperature Schedule DI", "MCQ",
+         "What best can be concluded about the number of times the AC must have either "
+         "been turned on or the AC temperature setting been altered between 11:01 pm "
+         "and 1:59 am?",
+         ["Exactly 2", "Exactly 3", "Either 2 or 3", "More than 3"]),
+     "passage_text": _passage},
+    {**q(_g, _slot, "AC Temperature Schedule DI", "TITA",
+         "What was the maximum difference between temperature outside and inside "
+         "temperature, in degree Celsius, between 11:01 pm and 1:59 am?"),
+     "passage_text": _passage},
+]
+
+_g = "cat2024_slot3_dilr_set4"
+_passage = (
+    "Over the top (OTT) subscribers of a platform are segregated into three "
+    "categories: i) Kid, ii) Elder, and iii) Others. Some of the subscribers used one "
+    "app and the others used multiple apps to access the platform. The figure below "
+    "shows the percentage of the total number of subscribers in 2023 and 2024 who "
+    "belong to the 'Kid' and 'Elder' categories.\n\n"
+    "Percentage of total subscribers:\n"
+    "| Category | 2023 | 2024 |\n"
+    "|---|---|---|\n"
+    "| Kid | 15% | 20% |\n"
+    "| Elder | 20% | 30% |\n\n"
+    "The following additional facts are known about the numbers of subscribers:\n"
+    "1. The total number of subscribers increased by 10% from 2023 to 2024.\n"
+    "2. In 2024, 1/2 of the subscribers from the 'Kid' category and 2/3 of the "
+    "subscribers from the 'Elder' category use one app.\n"
+    "3. In 2023, the number of subscribers from the 'Kid' category who used multiple "
+    "apps was the same as the number of subscribers from the 'Elder' category who used "
+    "one app.\n"
+    "4. 10,000 subscribers from the 'Kid' category used one app and 15,000 subscribers "
+    "from the 'Elder' category used multiple apps in 2023."
+)
+QUESTIONS += [
+    {**q(_g, _slot, "OTT Subscribers DI", "MCQ",
+         "How many subscribers belonged to the 'Others' category in 2024?",
+         ["Cannot be determined", "65000", "55000", "45000"]), "passage_text": _passage},
+    {**q(_g, _slot, "OTT Subscribers DI", "MCQ",
+         "What percentage of subscribers in the 'Kid' category used multiple apps in "
+         "2023?",
+         ["33.33%", "50.00%", "25.50%", "5.00%"]), "passage_text": _passage},
+    {**q(_g, _slot, "OTT Subscribers DI", "MCQ",
+         "What was the percentage increase in the number of subscribers in the "
+         "'Elder' category from 2023 to 2024?",
+         ["60%", "40%", "50%", "65%"]), "passage_text": _passage},
+    {**q(_g, _slot, "OTT Subscribers DI", "MCQ",
+         "What could be the minimum percentage of subscribers who used multiple apps "
+         "in 2024?",
+         ["22.00%", "10.0%", "20.0%", "16.5%"]), "passage_text": _passage},
+]
+
+_g = "cat2024_slot3_dilr_set5"
+_passage = (
+    "The figure below shows a network with three parallel roads represented by "
+    "horizontal lines R-A, R-B, and R-C and another three parallel roads represented by "
+    "vertical lines V1, V2, and V3. The figure also shows the distance (in km) between "
+    "two adjacent intersections.\n\n"
+    "Known adjacent-intersection distances: on road R-A, V1-to-V2 = 4 km and V2-to-V3 = "
+    "7 km. On road R-B, V2-to-V3 = 3 km (V1-to-V2 on R-B is not labelled). On road R-C, "
+    "V2-to-V3 = 5 km (V1-to-V2 on R-C is not labelled).\n\n"
+    "Six ATMs are placed at six of the nine road intersections. Each ATM has a distinct "
+    "integer cash requirement (in Rs. Lakhs), and the numbers at the end of each line in "
+    "the figure indicate the total cash requirements of all ATMs placed on the "
+    "corresponding road. For example, the total cash requirement of the ATM(s) placed "
+    "on road R-A is Rs. 22 Lakhs.\n\n"
+    "Road totals: R-A = 22, R-B = 20, R-C = 20. Column totals: V1 = 15, V2 = 21, V3 = "
+    "26.\n\n"
+    "The following additional information is known:\n"
+    "1. The ATMs with the minimum and maximum cash requirements of Rs. 7 Lakhs and Rs. "
+    "15 Lakhs are placed on the same road.\n"
+    "2. The road distance between the ATM with the second highest cash requirement and "
+    "the ATM located at the intersection of R-C and V3 is 12 km."
+)
+QUESTIONS += [
+    {**q(_g, _slot, "ATM Cash Network DI", "MCQ",
+         "Which of the following statements is correct?",
+         [
+             "The ATM placed at the (R-C, V2) intersection has a cash requirement of "
+             "Rs. 9 Lakhs.",
+             "There is no ATM placed at the (R-C, V2) intersection.",
+             "The cash requirement of the ATM placed at the (R-C, V2) intersection "
+             "cannot be uniquely determined.",
+             "The ATM placed at the (R-C, V2) intersection has a cash requirement of "
+             "Rs. 8 Lakhs.",
+         ]), "passage_text": _passage},
+    {**q(_g, _slot, "ATM Cash Network DI", "TITA",
+         "How many ATMs have cash requirements of Rs. 10 Lakhs or more?"),
+     "passage_text": _passage},
+    {**q(_g, _slot, "ATM Cash Network DI", "MCQ",
+         "Which of the following two statements is/are DEFINITELY true?\n"
+         "Statement A: Each of R-A, R-B, and R-C has two ATMs.\n"
+         "Statement B: Each of V1, V2, and V3 has two ATMs.",
+         ["Only Statement A", "Both Statement A and Statement B", "Only Statement B",
+          "Neither Statement A nor Statement B"]), "passage_text": _passage},
+    {**q(_g, _slot, "ATM Cash Network DI", "MCQ",
+         "What best can be said about the road distance (in km) between the ATMs "
+         "having the second highest and the second lowest cash requirements?",
+         ["5 km", "Either 4 km or 7 km", "4 km", "7 km"]), "passage_text": _passage},
+    {**q(_g, _slot, "ATM Cash Network DI", "TITA",
+         "What is the number of ATMs whose locations and cash requirements can both "
+         "be uniquely determined?"), "passage_text": _passage},
 ]
 
 
