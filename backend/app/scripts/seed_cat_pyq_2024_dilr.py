@@ -223,6 +223,43 @@ QUESTIONS += [
          ["26%", "20%", "28%", "29%"]), "passage_text": _passage},
 ]
 
+_g = "cat2024_slot1_dilr_set4"
+_passage = (
+    "The chart below shows the price data for seven shares - A, B, C, D, E, F, and G - "
+    "as a candlestick plot for a particular day. The vertical axis shows the price of "
+    "the share in rupees. A share whose closing price (price at the end of the day) is "
+    "more than its opening price (price at the start of the day) is called a bullish "
+    "share; otherwise, it is called a bearish share. All bullish and bearish shares are "
+    "shown in green and red colour respectively.\n\n"
+    "NOTE: the exact day's-high / opening / closing / day's-low price for each of the "
+    "seven shares is only given by the candlestick plot image itself and is not "
+    "reproduced here as text/table - it could not be read off the chart precisely "
+    "enough to be trusted. Anyone answering these questions will need the original "
+    "chart image."
+)
+QUESTIONS += [
+    {**q(_g, _slot, "Candlestick Share Price DI", "MCQ",
+         "Daily Share Price Variability (SPV) is defined as (Day's high price - Day's "
+         "low price) / (Average of the opening and closing prices during the day). "
+         "Which among the shares A, C, D and F had the highest SPV on that day?",
+         ["F", "C", "D", "A"]), "passage_text": _passage},
+    {**q(_g, _slot, "Candlestick Share Price DI", "TITA",
+         "Daily Share Price Variability (SPV) is defined as (Day's high price - Day's "
+         "low price) / (Average of the opening and closing prices during the day). How "
+         "many shares had an SPV greater than 0.5 on that day?"),
+     "passage_text": _passage},
+    {**q(_g, _slot, "Candlestick Share Price DI", "MCQ",
+         "Daily loss for a share is defined as (Opening price - Closing price) / "
+         "(Opening price). Which among the shares A, B, F and G had the highest daily "
+         "loss on that day?",
+         ["G", "B", "A", "F"]), "passage_text": _passage},
+    {**q(_g, _slot, "Candlestick Share Price DI", "MCQ",
+         "What would have been the percentage wealth gain for a trader, who bought "
+         "equal numbers of all bullish shares at opening price and sold them at their "
+         "day's high?",
+         ["80%", "50%", "72%", "100%"]), "passage_text": _passage},
+]
+
 _g = "cat2024_slot1_dilr_set5"
 _passage = (
     "The game of QUIET is played between two teams. Six teams, numbered 1, 2, 3, 4, 5, "
