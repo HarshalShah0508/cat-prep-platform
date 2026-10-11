@@ -44,11 +44,12 @@ table rather than requiring image reading:
   - Slot 1 Set 5 (QUIET tournament, 5Q, pure logic)
   - Slot 2 Set 1 (gymnastics coaches, 5Q, pure logic)
   - Slot 2 Set 5 (product ratings, 4Q) - the "Distribution of Ratings on
-    Day 2" bar chart's data (10/5/15/20/25 buyers for ratings 1-5) is
-    independently confirmed: solving the given cumulative-average equation
-    with these exact values produces the clean integer x=375 stated in the
-    solution, which would be extremely unlikely by chance if the chart
-    data were misread.
+    Day 2" bar chart's data was corrected to 5/10/5/20/10 buyers for
+    ratings 1-5 (50 buyers, 170 points) per a user-supplied screenshot of
+    the real chart; this superseded an earlier, wrong guess of
+    10/5/15/20/25. All four answers derived from the corrected values
+    land exactly on the screenshot's confirmed answers - see
+    backfill_dilr_2024_slot2_set5_answers.py.
   - Slot 3 Set 2 (GDP/population table, 4Q) - full table given as legible
     text, not an image chart.
 
@@ -377,9 +378,9 @@ _passage = (
     "day. The cumulative average is the average of all ratings given on or before that "
     "day. The rating system began on Day 1, and the cumulative averages were 3 and 3.1 "
     "at the end of Day 1 and Day 2, respectively. The distribution of ratings on Day 2 "
-    "was: 10 buyers gave a rating of 1, 5 buyers gave a rating of 2, 15 buyers gave a "
-    "rating of 3, 20 buyers gave a rating of 4, and 25 buyers gave a rating of 5 (75 "
-    "buyers total, total rating points 270).\n\n"
+    "was: 5 buyers gave a rating of 1, 10 buyers gave a rating of 2, 5 buyers gave a "
+    "rating of 3, 20 buyers gave a rating of 4, and 10 buyers gave a rating of 5 (50 "
+    "buyers total, total rating points 170).\n\n"
     "The following information is known about ratings on Day 3.\n"
     "1. 100 buyers gave product ratings on Day 3.\n"
     "2. The modes of the product ratings were 4 and 5.\n"
