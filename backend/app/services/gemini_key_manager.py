@@ -51,17 +51,23 @@ class GeminiKeyManager:
 
     def generate_content(
         self,
-        prompt: str,
+        prompt: Optional[str] = None,
         response_schema: Optional[Type[T]] = None,
         purpose: str = "",
         model: str = DEFAULT_MODEL,
+        contents: Optional[Any] = None,
     ) -> Any:
         """Generate content with Gemini, rotating across keys on rate-limit errors.
+
+        `contents` overrides `prompt` when given - lets a multimodal call (e.g. a PDF
+        `Part` alongside instruction text) go through the same rotating-key chokepoint
+        instead of bypassing it.
 
         Returns the raw text response, or a parsed instance of `response_schema` when given.
         """
         last_error: Optional[Exception] = None
         keys_to_try = self._ordered_keys()[: len(self._api_keys)]
+        request_contents = contents if contents is not None else prompt
 
         for api_key in keys_to_try:
             client = self._client_for(api_key)
@@ -75,7 +81,7 @@ class GeminiKeyManager:
 
                 response = client.models.generate_content(
                     model=model,
-                    contents=prompt,
+                    contents=request_contents,
                     config=config,
                 )
 

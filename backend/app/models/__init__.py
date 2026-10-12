@@ -1,5 +1,6 @@
 from app.models.cat_mock_test_question import CatMockTestQuestion  # noqa: F401
 from app.models.cat_mock_test_session import CatMockTestSession  # noqa: F401
+from app.models.cat_pi_resume import CatPIResume  # noqa: F401
 from app.models.cat_pi_session import CatPISession  # noqa: F401
 from app.models.cat_question import CatQuestion  # noqa: F401
 from app.models.cat_weak_concept import CatWeakConcept  # noqa: F401

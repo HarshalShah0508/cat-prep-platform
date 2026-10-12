@@ -122,7 +122,7 @@ export default function DashboardPage() {
           ) : (
             <p className="text-muted">No PI practice sessions yet.</p>
           )}
-          <Link to="/pi" className="btn btn-primary">
+          <Link to="/pi/new" className="btn btn-primary">
             Start PI practice
           </Link>
         </div>

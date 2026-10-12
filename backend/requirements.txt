@@ -11,4 +11,5 @@ bcrypt<4.1
 python-multipart
 slowapi
 google-genai
+pymupdf
 python-dotenv

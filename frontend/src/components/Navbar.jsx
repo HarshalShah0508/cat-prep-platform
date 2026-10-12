@@ -35,7 +35,7 @@ export default function Navbar() {
           <NavLink to="/pyq-tests" className={({ isActive }) => (isActive ? 'active' : '')}>
             PYQ Practice
           </NavLink>
-          <NavLink to="/pi" className={({ isActive }) => (isActive ? 'active' : '')}>
+          <NavLink to="/pi/new" className={({ isActive }) => (isActive ? 'active' : '')}>
             PI Practice
           </NavLink>
           <NavLink to="/weak-concepts" className={({ isActive }) => (isActive ? 'active' : '')}>

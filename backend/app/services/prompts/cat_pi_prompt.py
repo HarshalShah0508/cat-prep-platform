@@ -1,46 +1,82 @@
-from typing import List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional
+
+BASE_QUESTION_COUNT = 8
 
 
-def build_cat_pi_prompt(
+def build_cat_pi_batch_prompt(
     target_iims: Optional[List[str]],
+    target_percentile: Optional[float],
     resume_text_or_none: Optional[str],
-    previous_qa_pairs: Sequence[Tuple[str, str]],
+    count: int = BASE_QUESTION_COUNT,
 ) -> str:
+    """Builds a single prompt that asks Gemini for ALL questions of a PI session at once
+    (batch-upfront, mirroring InterviewAI's generate-questions call), instead of the old
+    one-question-at-a-time live generation."""
     iims_text = ", ".join(target_iims) if target_iims else "a range of top IIMs"
+    percentile_text = (
+        f"The candidate is targeting roughly the {target_percentile:.0f}th percentile.\n"
+        if target_percentile
+        else ""
+    )
 
     if resume_text_or_none:
-        resume_section = f"Candidate background notes:\n{resume_text_or_none}\n"
+        resume_section = (
+            "The candidate's resume/profile notes are below. Reference specific details from "
+            "it (academic background, work experience, projects, extracurriculars) in at "
+            "least 2-3 of the questions, the way a real panel would probe a candidate's "
+            "actual profile - but keep the other questions generically applicable so the "
+            "interview doesn't become a resume-only Q&A.\n\n"
+            f"Resume/profile notes:\n{resume_text_or_none}\n"
+        )
     else:
         resume_section = "No resume/profile notes are available; ask generically applicable questions.\n"
 
-    if previous_qa_pairs:
-        history_lines = "\n".join(
-            f"Q{i + 1}: {q}\nA{i + 1}: {a}" for i, (q, a) in enumerate(previous_qa_pairs)
-        )
-        history_section = f"Prior questions and answers in this interview so far:\n{history_lines}\n"
-    else:
-        history_section = "This is the first question of the interview.\n"
-
-    return f"""You are a generic IIM Personal Interview (PI) panel member conducting a CAT/MBA
-admissions interview. You are NOT representing any single specific IIM by name — behave as a
+    return f"""You are a generic IIM Personal Interview (PI) panel conducting a CAT/MBA
+admissions interview. You are NOT representing any single specific IIM by name - behave as a
 composite, generic IIM panel. The candidate is targeting: {iims_text}.
-
+{percentile_text}
 {resume_section}
-{history_section}
-Ask the SINGLE next interview question, appropriate for this point in the interview. Vary
-across categories over the course of the interview: personal background/introduction,
-academics, current affairs and general awareness, why-MBA and career goals, and
-situational/HR-style questions. Keep progression natural and do not repeat a topic already
-covered above. Keep the question concise (1-3 sentences).
+Generate EXACTLY {count} interview questions for this PI session, covering a natural spread
+across these categories (don't label the categories, just vary across them naturally):
+1. Personal background / "tell me about yourself" / introduction
+2. Academic background (degree, subjects, academic performance)
+3. Current affairs, general awareness, and business/economy knowledge
+4. Why MBA, career goals, and why these target institutes
+5. Situational, ethical, or HR-style questions (leadership, conflict, ambiguity)
 
-Respond with ONLY a JSON object with exactly this field, and no other text:
-{{
-  "question_text": "<the next interview question>"
-}}
+Rules:
+- Order the questions so the interview flows naturally (start with background/introduction,
+  end with why-MBA/goals), without being mechanically "one question per category."
+- Keep each question concise (1-3 sentences).
+- Do not repeat a topic across questions.
+- Do not number categories or explain your choices - only output the questions.
+
+Return ONLY a numbered plain-text list, exactly in this format (no markdown, no extra
+commentary before or after):
+
+1. <first question>
+2. <second question>
+...
+{count}. <last question>
 """
 
 
-def build_cat_pi_followup_prompt(question: str, answer: str) -> str:
+def build_cat_pi_followup_prompt(
+    question: str,
+    answer: str,
+    evaluation: Optional[Dict] = None,
+) -> str:
+    evaluation_section = ""
+    if evaluation:
+        strengths = ", ".join(evaluation.get("strengths") or []) or "none noted"
+        improvements = ", ".join(evaluation.get("improvements") or []) or "none noted"
+        evaluation_section = f"""
+This answer scored {evaluation.get("score")}/10.
+Feedback given: {evaluation.get("feedback")}
+Strengths noted: {strengths}
+Areas to improve: {improvements}
+"""
+
     return f"""You are an IIM Personal Interview (PI) panel member. The candidate was asked:
 
 "{question}"
@@ -48,13 +84,11 @@ def build_cat_pi_followup_prompt(question: str, answer: str) -> str:
 The candidate answered:
 
 "{answer}"
-
+{evaluation_section}
 This answer was weak, vague, or incomplete. Ask ONE short, probing follow-up question that digs
 deeper into the same topic, challenges an assumption in the answer, or asks the candidate to
-clarify or justify what they said. Keep it concise (1-2 sentences).
+clarify or justify what they said. Stay on exactly the same topic - do not introduce a new one.
+Keep it concise (1-2 sentences).
 
-Respond with ONLY a JSON object with exactly this field, and no other text:
-{{
-  "question_text": "<the follow-up question>"
-}}
+Return ONLY the follow-up question text, no JSON, no preamble, no quotes.
 """

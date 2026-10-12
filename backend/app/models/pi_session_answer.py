@@ -17,6 +17,8 @@ class PISessionAnswer(Base):
     feedback = Column(Text, nullable=True)
     strengths = Column(JSON, nullable=True)
     improvements = Column(JSON, nullable=True)
+    delivery_signals = Column(JSON, nullable=True)
+    delivery_feedback = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     question = relationship("PISessionQuestion", back_populates="answer")

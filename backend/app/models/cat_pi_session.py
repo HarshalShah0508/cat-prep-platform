@@ -11,6 +11,7 @@ class CatPISession(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    resume_id = Column(Integer, ForeignKey("cat_pi_resumes.id"), nullable=True)
     target_iims = Column(JSON, nullable=True)
     target_percentile = Column(Float, nullable=True)
     status = Column(
@@ -21,8 +22,11 @@ class CatPISession(Base):
     finished_at = Column(DateTime(timezone=True), nullable=True)
     overall_score = Column(Float, nullable=True)
     feedback_text = Column(Text, nullable=True)
+    user_rating = Column(Integer, nullable=True)
+    user_feedback_text = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
+    resume = relationship("CatPIResume")
     questions = relationship(
         "PISessionQuestion",
         back_populates="pi_session",

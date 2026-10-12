@@ -8,7 +8,9 @@ import CatMockTestSetupPage from './pages/CatMockTestSetupPage'
 import CatPyqSetupPage from './pages/CatPyqSetupPage'
 import CatMockTestSessionPage from './pages/CatMockTestSessionPage'
 import CatMockTestResultsPage from './pages/CatMockTestResultsPage'
+import CatPiSetupPage from './pages/CatPiSetupPage'
 import CatPiSessionPage from './pages/CatPiSessionPage'
+import CatPiResultsPage from './pages/CatPiResultsPage'
 import CatWeakConceptsPage from './pages/CatWeakConceptsPage'
 
 export default function AppRouter() {
@@ -66,10 +68,10 @@ export default function AppRouter() {
         }
       />
       <Route
-        path="/pi"
+        path="/pi/new"
         element={
           <ProtectedRoute>
-            <CatPiSessionPage />
+            <CatPiSetupPage />
           </ProtectedRoute>
         }
       />
@@ -78,6 +80,14 @@ export default function AppRouter() {
         element={
           <ProtectedRoute>
             <CatPiSessionPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/pi/:sessionId/results"
+        element={
+          <ProtectedRoute>
+            <CatPiResultsPage />
           </ProtectedRoute>
         }
       />

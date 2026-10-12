@@ -4,7 +4,16 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
-from app.api import auth, cat_mock_tests, cat_pi, cat_profile, cat_pyq, cat_weak_concepts, dashboard
+from app.api import (
+    auth,
+    cat_mock_tests,
+    cat_pi,
+    cat_profile,
+    cat_pyq,
+    cat_resume,
+    cat_weak_concepts,
+    dashboard,
+)
 from app.core.config import settings
 from app.core.rate_limiter import limiter
 
@@ -27,6 +36,7 @@ app.include_router(cat_profile.router)
 app.include_router(cat_mock_tests.router)
 app.include_router(cat_pyq.router)
 app.include_router(cat_pi.router)
+app.include_router(cat_resume.router)
 app.include_router(cat_weak_concepts.router)
 app.include_router(dashboard.router)
 
