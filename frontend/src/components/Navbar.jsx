@@ -1,22 +1,37 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import ThemeToggle from './ui/ThemeToggle'
 
 const EXAM_ROUTE = /^\/mock-tests\/\d+$/
+const PI_SESSION_ROUTE = /^\/pi\/\d+$/
+
+function initialsFor(name) {
+  if (!name) return '?'
+  return name.trim().slice(0, 2).toUpperCase()
+}
 
 export default function Navbar() {
-  const { isAuthenticated, user, logout } = useAuth()
+  const { isAuthenticated, user, logout, promptLogin } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
-  // Locked down during an active test - no navigating away except the page's own
-  // "Exit Test" control, same as a real exam interface.
-  if (!isAuthenticated || EXAM_ROUTE.test(location.pathname)) {
+  // Locked down during an active test or a live (recording) PI session - no
+  // navigating away except each page's own "Exit" control, same as a real
+  // exam interface.
+  if (EXAM_ROUTE.test(location.pathname) || PI_SESSION_ROUTE.test(location.pathname)) {
     return null
   }
 
   function handleLogout() {
     logout()
     navigate('/login')
+  }
+
+  function gateClick(e) {
+    if (!isAuthenticated) {
+      e.preventDefault()
+      promptLogin()
+    }
   }
 
   return (
@@ -29,24 +44,38 @@ export default function Navbar() {
           <NavLink to="/dashboard" className={({ isActive }) => (isActive ? 'active' : '')}>
             Dashboard
           </NavLink>
-          <NavLink to="/mock-tests/new" className={({ isActive }) => (isActive ? 'active' : '')}>
+          <NavLink to="/mock-tests/new" onClick={gateClick} className={({ isActive }) => (isActive ? 'active' : '')}>
             Mock Tests
           </NavLink>
-          <NavLink to="/pyq-tests" className={({ isActive }) => (isActive ? 'active' : '')}>
+          <NavLink to="/pyq-tests" onClick={gateClick} className={({ isActive }) => (isActive ? 'active' : '')}>
             PYQ Practice
           </NavLink>
-          <NavLink to="/pi/new" className={({ isActive }) => (isActive ? 'active' : '')}>
-            PI Practice
+          <NavLink to="/pi/new" onClick={gateClick} className={({ isActive }) => (isActive ? 'active' : '')}>
+            Personal Interview
           </NavLink>
-          <NavLink to="/weak-concepts" className={({ isActive }) => (isActive ? 'active' : '')}>
+          <NavLink to="/weak-concepts" onClick={gateClick} className={({ isActive }) => (isActive ? 'active' : '')}>
             Weak Concepts
           </NavLink>
         </nav>
         <div className="navbar-user">
-          {user && <span className="navbar-username">{user.username}</span>}
-          <button type="button" className="btn btn-ghost btn-sm" onClick={handleLogout}>
-            Log out
-          </button>
+          <ThemeToggle />
+          {isAuthenticated ? (
+            <>
+              {user && <span className="ui-avatar" title={user.username}>{initialsFor(user.username)}</span>}
+              <button type="button" className="btn btn-ghost btn-sm" onClick={handleLogout}>
+                Log out
+              </button>
+            </>
+          ) : (
+            <>
+              <NavLink to="/login" className="btn btn-ghost btn-sm">
+                Log in
+              </NavLink>
+              <NavLink to="/signup" className="btn btn-primary btn-sm">
+                Sign up
+              </NavLink>
+            </>
+          )}
         </div>
       </div>
     </header>

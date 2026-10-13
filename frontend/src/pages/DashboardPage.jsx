@@ -1,16 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { getDashboard } from '../api/dashboardApi'
 import { getCatProfile } from '../api/catProfileApi'
-
-function StatCard({ label, value }) {
-  return (
-    <div className="card stat-card">
-      <div className="stat-value">{value}</div>
-      <div className="stat-label">{label}</div>
-    </div>
-  )
-}
+import { useAuth } from '../context/AuthContext'
+import PageHeader from '../components/ui/PageHeader'
+import AuthGatedLink from '../components/auth/AuthGatedLink'
 
 function formatDate(value) {
   if (!value) return ''
@@ -26,12 +20,20 @@ function formatDate(value) {
 }
 
 export default function DashboardPage() {
+  const { isAuthenticated } = useAuth()
   const [data, setData] = useState(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      setData(null)
+      setError('')
+      setLoading(false)
+      return
+    }
+
     let cancelled = false
     async function load() {
       setLoading(true)
@@ -58,7 +60,7 @@ export default function DashboardPage() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [isAuthenticated])
 
   if (loading) {
     return <div className="page-loading">Loading dashboard...</div>
@@ -74,68 +76,102 @@ export default function DashboardPage() {
 
   return (
     <div className="page-container">
-      <h1>Welcome back{data?.username ? `, ${data.username}` : ''}</h1>
-      <p className="text-muted">{data?.email}</p>
-
-      <div className="stat-grid">
-        <StatCard label="Mock tests taken" value={data?.mock_tests_taken ?? 0} />
-        <StatCard
-          label="Avg percentile"
-          value={data?.avg_percentile != null ? data.avg_percentile.toFixed(2) : '—'}
+      {isAuthenticated ? (
+        <PageHeader
+          eyebrow="Dashboard"
+          title={`Welcome back${data?.username ? `, ${data.username}` : ''}`}
+          subtitle={data?.email}
+          stats={[
+            { value: data?.mock_tests_taken ?? 0, label: 'Mock tests' },
+            {
+              value: data?.avg_percentile != null ? data.avg_percentile.toFixed(2) : '—',
+              label: 'Avg percentile',
+              accent: true,
+            },
+            { value: data?.pi_sessions_completed ?? 0, label: 'PI sessions' },
+            { value: data?.weak_concepts_flagged ?? 0, label: 'Weak concepts' },
+          ]}
         />
-        <StatCard label="PI sessions completed" value={data?.pi_sessions_completed ?? 0} />
-        <StatCard label="Weak concepts flagged" value={data?.weak_concepts_flagged ?? 0} />
-        <StatCard label="Weak concepts resolved" value={data?.weak_concepts_resolved ?? 0} />
-      </div>
+      ) : (
+        <PageHeader
+          eyebrow="Dashboard"
+          title="Welcome to CATPrep"
+          subtitle="Full mocks, real past papers, AI-scored Personal Interview practice, and automatic weak-topic tracking."
+        />
+      )}
 
-      <div className="dashboard-grid">
-        <div className="card">
-          <h2>Latest mock test</h2>
-          {data?.latest_mock_result ? (
-            <div>
-              <p>
-                Raw score: <strong>{data.latest_mock_result.raw_score}</strong>
-              </p>
-              <p>
-                Percentile estimate:{' '}
-                <strong>{data.latest_mock_result.percentile_estimate}</strong>
-              </p>
-              <p className="text-muted">{formatDate(data.latest_mock_result.created_at)}</p>
-            </div>
-          ) : (
-            <p className="text-muted">No mock tests taken yet.</p>
-          )}
-          <Link to="/mock-tests/new" className="btn btn-primary">
-            Start a new mock test
-          </Link>
-        </div>
-
-        <div className="card">
-          <h2>Latest PI session</h2>
-          {data?.latest_pi_session ? (
-            <div>
-              <p>
-                Overall score: <strong>{data.latest_pi_session.overall_score}</strong>
-              </p>
-              <p className="text-muted">{formatDate(data.latest_pi_session.created_at)}</p>
-            </div>
-          ) : (
-            <p className="text-muted">No PI practice sessions yet.</p>
-          )}
-          <Link to="/pi/new" className="btn btn-primary">
-            Start PI practice
-          </Link>
-        </div>
-
-        <div className="card">
-          <h2>Weak concepts</h2>
+      <div className="dashboard-hub">
+        <div className="ui-card dashboard-cta-card">
+          <div className="ui-eyebrow">Ready when you are</div>
+          <h2>Start your next mock test</h2>
           <p className="text-muted">
-            {data?.weak_concepts_flagged ?? 0} flagged, {data?.weak_concepts_resolved ?? 0}{' '}
-            resolved.
+            Full mock, sectional, or a topic drill - pick the format and go.
           </p>
-          <Link to="/weak-concepts" className="btn btn-secondary">
-            View weak concepts
-          </Link>
+          {isAuthenticated ? (
+            data?.latest_mock_result ? (
+              <div>
+                <p>
+                  Last result: <strong>{data.latest_mock_result.raw_score}</strong> raw score,{' '}
+                  <strong>{data.latest_mock_result.percentile_estimate}</strong> percentile
+                </p>
+                <p className="text-muted">{formatDate(data.latest_mock_result.created_at)}</p>
+              </div>
+            ) : (
+              <p className="text-muted">No mock tests taken yet.</p>
+            )
+          ) : (
+            <p className="text-muted">Log in to track your results here.</p>
+          )}
+          <AuthGatedLink to="/mock-tests/new" className="ui-btn-hero">
+            Start a new mock test
+          </AuthGatedLink>
+        </div>
+
+        <div className="dashboard-side-col">
+          <div className="ui-card">
+            <div className="ui-eyebrow">PYQ practice</div>
+            <h2>Real past papers</h2>
+            <p className="text-muted">Replay an exact past CAT paper, slot by slot.</p>
+            <AuthGatedLink to="/pyq-tests" className="btn btn-secondary btn-sm">
+              Browse PYQ papers →
+            </AuthGatedLink>
+          </div>
+
+          <div className="ui-card">
+            <div className="ui-eyebrow">Latest PI session</div>
+            <h2>Personal Interview</h2>
+            {isAuthenticated ? (
+              data?.latest_pi_session ? (
+                <p className="text-muted">
+                  Last score {data.latest_pi_session.overall_score} ·{' '}
+                  {formatDate(data.latest_pi_session.created_at)}
+                </p>
+              ) : (
+                <p className="text-muted">No PI practice sessions yet.</p>
+              )
+            ) : (
+              <p className="text-muted">AI-scored mock interviews with delivery feedback.</p>
+            )}
+            <AuthGatedLink to="/pi/new" className="btn btn-secondary btn-sm">
+              Start PI practice →
+            </AuthGatedLink>
+          </div>
+
+          <div className="ui-card">
+            <div className="ui-eyebrow">Study plan</div>
+            <h2>Weak concepts</h2>
+            {isAuthenticated ? (
+              <p className="text-muted">
+                {data?.weak_concepts_flagged ?? 0} flagged, {data?.weak_concepts_resolved ?? 0}{' '}
+                resolved.
+              </p>
+            ) : (
+              <p className="text-muted">Automatically flagged from your mock test performance.</p>
+            )}
+            <AuthGatedLink to="/weak-concepts" className="btn btn-secondary btn-sm">
+              View weak concepts →
+            </AuthGatedLink>
+          </div>
         </div>
       </div>
     </div>

@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getAvailablePyqPapers, startPyqPaper } from '../api/catPyqApi'
 import { useCatMockTest } from '../context/CatMockTestContext'
+import PageHeader from '../components/ui/PageHeader'
+import Pill from '../components/ui/Pill'
+import ListRow from '../components/ui/ListRow'
 
 const SLOT_LABELS = { slot1: 'Slot 1', slot2: 'Slot 2', slot3: 'Slot 3' }
 const ALL_SECTIONS = ['VARC', 'DILR', 'QA']
@@ -66,14 +69,14 @@ export default function CatPyqSetupPage() {
   if (mode === null) {
     return (
       <div className="page-container">
-        <h1>PYQ practice</h1>
-        <p className="text-muted">
-          Take a real past CAT paper exactly as it was administered - same questions, same
-          slot, same section split.
-        </p>
+        <PageHeader
+          eyebrow="PYQ practice"
+          title="PYQ practice"
+          subtitle="Take a real past CAT paper exactly as it was administered - same questions, same slot, same section split."
+        />
         {error && <div className="alert alert-error">{error}</div>}
         <div className="stat-grid">
-          <div className="card">
+          <div className="ui-card">
             <h2>Sectional Test</h2>
             <p className="text-muted">
               Practice one section at a time - pick VARC, DILR, or QA, then a specific
@@ -83,7 +86,7 @@ export default function CatPyqSetupPage() {
               Choose a section
             </button>
           </div>
-          <div className="card">
+          <div className="ui-card">
             <h2>Full Mock Test</h2>
             <p className="text-muted">
               The complete real exam sequence - VARC, then DILR, then QA, 40 minutes each,
@@ -105,11 +108,15 @@ export default function CatPyqSetupPage() {
         <button type="button" className="btn btn-ghost btn-sm" onClick={reset}>
           &larr; Back
         </button>
-        <h1>Sectional Test - choose a section</h1>
+        <PageHeader
+          eyebrow="Sectional test"
+          title="Choose a section"
+          breadcrumb={[{ label: 'PYQ Practice', onClick: reset }, { label: 'Sectional' }]}
+        />
         {error && <div className="alert alert-error">{error}</div>}
         <div className="stat-grid">
           {ALL_SECTIONS.map((sec) => (
-            <div key={sec} className="card">
+            <div key={sec} className="ui-card">
               <h2>{sec}</h2>
               <button type="button" className="btn btn-primary btn-block" onClick={() => setSection(sec)}>
                 Select {sec}
@@ -129,32 +136,39 @@ export default function CatPyqSetupPage() {
         <button type="button" className="btn btn-ghost btn-sm" onClick={() => setSection(null)}>
           &larr; Back
         </button>
-        <h1>Sectional Test - {section}</h1>
+        <PageHeader
+          eyebrow="Sectional test"
+          title={section}
+          breadcrumb={[
+            { label: 'PYQ Practice', onClick: reset },
+            { label: 'Sectional', onClick: () => setSection(null) },
+            { label: section },
+          ]}
+        />
         {error && <div className="alert alert-error">{error}</div>}
         {eligible.length === 0 ? (
           <p className="text-muted">No {section} papers available yet.</p>
         ) : (
-          <div className="stat-grid">
+          <div>
             {eligible.map((paper) => {
               const key = `${paper.source_year}-${paper.source_slot}-${section}`
               const slotLabel = SLOT_LABELS[paper.source_slot] || paper.source_slot
               return (
-                <div key={key} className="card">
-                  <h2>
-                    CAT {paper.source_year} &middot; {slotLabel}
-                  </h2>
-                  <p className="text-muted">{paper.sections[section]} questions</p>
-                  <button
-                    type="button"
-                    className="btn btn-primary btn-block"
-                    disabled={startingKey === key}
-                    onClick={() => handleStart(paper, [section])}
-                  >
-                    {startingKey === key
-                      ? 'Starting...'
-                      : `Start mock test of ${section} ${paper.source_year} ${slotLabel}`}
-                  </button>
-                </div>
+                <ListRow
+                  key={key}
+                  title={`CAT ${paper.source_year} · ${slotLabel}`}
+                  meta={<Pill tone="neutral">{paper.sections[section]} questions</Pill>}
+                  actions={
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      disabled={startingKey === key}
+                      onClick={() => handleStart(paper, [section])}
+                    >
+                      {startingKey === key ? 'Starting...' : 'Start'}
+                    </button>
+                  }
+                />
               )
             })}
           </div>
@@ -169,38 +183,45 @@ export default function CatPyqSetupPage() {
       <button type="button" className="btn btn-ghost btn-sm" onClick={reset}>
         &larr; Back
       </button>
-      <h1>Full Mock Test</h1>
+      <PageHeader
+        eyebrow="Full mock test"
+        title="Choose a paper"
+        breadcrumb={[{ label: 'PYQ Practice', onClick: reset }, { label: 'Full mock' }]}
+      />
       {error && <div className="alert alert-error">{error}</div>}
       {papers.length === 0 ? (
         <p className="text-muted">No PYQ papers available yet.</p>
       ) : (
-        <div className="stat-grid">
+        <div>
           {papers.map((paper) => {
             const key = `${paper.source_year}-${paper.source_slot}-full`
             const slotLabel = SLOT_LABELS[paper.source_slot] || paper.source_slot
             const totalQuestions = Object.values(paper.sections).reduce((a, b) => a + b, 0)
             return (
-              <div key={key} className="card">
-                <h2>
-                  CAT {paper.source_year} &middot; {slotLabel}
-                </h2>
-                <div className="section-result-stats">
-                  {Object.entries(paper.sections).map(([sec, count]) => (
-                    <span key={sec} className="tag tag-skipped">
-                      {sec}: {count}
-                    </span>
-                  ))}
-                </div>
-                <p className="text-muted">{totalQuestions} questions total</p>
-                <button
-                  type="button"
-                  className="btn btn-primary btn-block"
-                  disabled={startingKey === key}
-                  onClick={() => handleStart(paper, undefined)}
-                >
-                  {startingKey === key ? 'Starting...' : 'Start full mock'}
-                </button>
-              </div>
+              <ListRow
+                key={key}
+                title={`CAT ${paper.source_year} · ${slotLabel}`}
+                meta={
+                  <>
+                    {Object.entries(paper.sections).map(([sec, count]) => (
+                      <Pill key={sec} tone="neutral">
+                        {sec}: {count}
+                      </Pill>
+                    ))}
+                    <span>{totalQuestions} questions total</span>
+                  </>
+                }
+                actions={
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    disabled={startingKey === key}
+                    onClick={() => handleStart(paper, undefined)}
+                  >
+                    {startingKey === key ? 'Starting...' : 'Start full mock'}
+                  </button>
+                }
+              />
             )
           })}
         </div>

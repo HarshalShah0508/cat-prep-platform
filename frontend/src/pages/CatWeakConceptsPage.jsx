@@ -2,15 +2,18 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getWeakConcepts, practiceWeakConcept } from '../api/catWeakConceptsApi'
 import { useCatMockTest } from '../context/CatMockTestContext'
+import PageHeader from '../components/ui/PageHeader'
+import Pill from '../components/ui/Pill'
+import ListRow from '../components/ui/ListRow'
 
-function statusBadgeClass(status) {
+function statusTone(status) {
   switch (status) {
     case 'resolved':
-      return 'badge badge-success'
+      return 'positive'
     case 'practicing':
-      return 'badge badge-warning'
+      return 'warning'
     default:
-      return 'badge badge-error'
+      return 'critical'
   }
 }
 
@@ -61,25 +64,32 @@ export default function CatWeakConceptsPage() {
 
   return (
     <div className="page-container">
-      <h1>Weak concepts</h1>
-      <p className="text-muted">Topics flagged from your mock tests that could use more practice.</p>
+      <PageHeader
+        eyebrow="Study plan"
+        title="Weak concepts"
+        subtitle="Topics flagged from your mock tests that could use more practice."
+        stats={[{ value: concepts.length, label: 'Flagged topics', accent: true }]}
+      />
 
       {error && <div className="alert alert-error">{error}</div>}
 
       {concepts.length === 0 ? (
-        <div className="card">
+        <div className="ui-card">
           <p className="text-muted">No weak concepts flagged yet. Take a mock test to get started.</p>
         </div>
       ) : (
-        <div className="weak-concept-list">
+        <div>
           {concepts.map((c) => (
-            <div key={c.id} className="card weak-concept-card">
-              <div>
-                <div className="weak-concept-section">{c.section}</div>
-                <div className="weak-concept-name">{c.concept}</div>
-              </div>
-              <div className="weak-concept-actions">
-                <span className={statusBadgeClass(c.status)}>{c.status}</span>
+            <ListRow
+              key={c.id}
+              title={c.concept}
+              meta={
+                <>
+                  <span className="ui-eyebrow" style={{ marginBottom: 0 }}>{c.section}</span>
+                  <Pill tone={statusTone(c.status)}>{c.status}</Pill>
+                </>
+              }
+              actions={
                 <button
                   type="button"
                   className="btn btn-secondary btn-sm"
@@ -88,8 +98,8 @@ export default function CatWeakConceptsPage() {
                 >
                   {practicingId === c.id ? 'Starting...' : 'Practice'}
                 </button>
-              </div>
-            </div>
+              }
+            />
           ))}
         </div>
       )}

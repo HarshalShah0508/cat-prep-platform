@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { getMockTestResults } from '../api/catMockTestApi'
+import PageHeader from '../components/ui/PageHeader'
+import Pill from '../components/ui/Pill'
+import ListRow from '../components/ui/ListRow'
 
 const SECTION_ORDER = ['VARC', 'DILR', 'QA']
 const SLOT_LABELS = { slot1: 'Slot 1', slot2: 'Slot 2', slot3: 'Slot 3' }
@@ -28,7 +31,7 @@ function QuestionReview({ question }) {
   const notAttempted = !noAnswerKey && question.is_correct === null
   const ungraded = noAnswerKey || notAttempted
   const isCorrect = question.is_correct
-  const badgeClass = ungraded ? 'badge-muted' : isCorrect ? 'badge-success' : 'badge-error'
+  const pillTone = ungraded ? 'neutral' : isCorrect ? 'positive' : 'critical'
   const badgeText = noAnswerKey
     ? 'Answer key pending'
     : notAttempted
@@ -39,9 +42,9 @@ function QuestionReview({ question }) {
   const cardClass = ungraded ? '' : isCorrect ? 'question-correct' : 'question-incorrect'
 
   return (
-    <div className={`card question-review ${cardClass}`}>
+    <div className={`ui-card question-review ${cardClass}`}>
       <button type="button" className="question-review-toggle" onClick={() => setExpanded((e) => !e)}>
-        <span className={`badge ${badgeClass}`}>{badgeText}</span>
+        <Pill tone={pillTone}>{badgeText}</Pill>
         <span className="question-review-text">{question.question_text}</span>
         <span className="expand-icon">{expanded ? '−' : '+'}</span>
       </button>
@@ -59,8 +62,8 @@ function QuestionReview({ question }) {
                 return (
                   <li key={idx} className={cls}>
                     {option}
-                    {isCorrectAnswer && <span className="tag"> Correct answer</span>}
-                    {isUserAnswer && !isCorrectAnswer && <span className="tag"> Your answer</span>}
+                    {isCorrectAnswer && <Pill tone="positive">Correct answer</Pill>}
+                    {isUserAnswer && !isCorrectAnswer && <Pill tone="critical">Your answer</Pill>}
                   </li>
                 )
               })}
@@ -139,37 +142,57 @@ export default function CatMockTestResultsPage() {
 
   return (
     <div className="page-container">
-      <h1>Your results</h1>
-      {results.test_type === 'pyq_paper' && (
-        <p className="text-muted">
-          CAT {results.pyq_source_year} &middot;{' '}
-          {SLOT_LABELS[results.pyq_source_slot] || results.pyq_source_slot}
-        </p>
-      )}
+      <PageHeader
+        eyebrow="Results"
+        title="Your results"
+        subtitle={
+          results.test_type === 'pyq_paper'
+            ? `CAT ${results.pyq_source_year} · ${SLOT_LABELS[results.pyq_source_slot] || results.pyq_source_slot}`
+            : undefined
+        }
+        stats={[
+          { value: results.raw_score, label: 'Raw score' },
+          { value: results.percentile_estimate, label: 'Percentile estimate', accent: true },
+        ]}
+      />
 
-      <div className="results-summary card">
-        <div>
-          <div className="stat-value">{results.raw_score}</div>
-          <div className="stat-label">Raw score</div>
-        </div>
-        <div>
-          <div className="stat-value">{results.percentile_estimate}</div>
-          <div className="stat-label">Percentile estimate</div>
-        </div>
+      <div className="ui-card">
+        <div className="ui-eyebrow">Topics to work on</div>
+        {results.weak_topics && results.weak_topics.length > 0 ? (
+          results.weak_topics.map((wt) => (
+            <ListRow
+              key={`${wt.section}-${wt.topic}`}
+              title={wt.topic}
+              meta={
+                <>
+                  <Pill tone="warning">{wt.section}</Pill>
+                  <span>{wt.wrong_count} wrong this test</span>
+                </>
+              }
+              actions={
+                <Link className="btn btn-secondary btn-sm" to="/weak-concepts">
+                  View &amp; practice
+                </Link>
+              }
+            />
+          ))
+        ) : (
+          <p className="text-muted">No major weak topics flagged from this test — nice work.</p>
+        )}
       </div>
 
       {sectionKeys.map((section) => {
         const sectionResult = breakdownBySection[section]
         const sectionQuestions = questionsBySection[section] ?? []
         return (
-          <div key={section} className="card section-result">
+          <div key={section} className="ui-card section-result">
             <h2>{section}</h2>
             <div className="section-result-stats">
-              <span className="tag tag-correct">{sectionResult.correct} correct</span>
-              <span className="tag tag-wrong">{sectionResult.wrong} wrong</span>
-              <span className="tag tag-skipped">{sectionResult.skipped} skipped</span>
+              <Pill tone="positive">{sectionResult.correct} correct</Pill>
+              <Pill tone="critical">{sectionResult.wrong} wrong</Pill>
+              <Pill tone="warning">{sectionResult.skipped} skipped</Pill>
               {sectionResult.ungraded > 0 && (
-                <span className="tag tag-muted">{sectionResult.ungraded} answer key pending</span>
+                <Pill tone="neutral">{sectionResult.ungraded} answer key pending</Pill>
               )}
             </div>
             <SectionBar
@@ -187,6 +210,15 @@ export default function CatMockTestResultsPage() {
           </div>
         )
       })}
+
+      <div className="pi-modal-actions">
+        <Link className="btn btn-secondary" to="/dashboard">
+          Back to dashboard
+        </Link>
+        <Link className="btn btn-primary" to="/mock-tests/new">
+          Start a new mock test
+        </Link>
+      </div>
     </div>
   )
 }

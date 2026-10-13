@@ -61,7 +61,8 @@ export default function CatOnboardingPage() {
 
   return (
     <div className="page-container">
-      <div className="card onboarding-card">
+      <div className="ui-card onboarding-card">
+        <div className="ui-eyebrow">Getting started</div>
         <h1>Tell us about your CAT prep</h1>
         <p className="text-muted">
           This helps us tailor mock tests, PI practice, and weak-concept tracking to you.
@@ -71,7 +72,9 @@ export default function CatOnboardingPage() {
 
         <form onSubmit={handleSubmit} noValidate>
           <div className="form-group">
-            <label htmlFor="academicBackground">Academic background</label>
+            <label htmlFor="academicBackground">
+              <span className="ui-step-index">01</span>Academic background
+            </label>
             <select
               id="academicBackground"
               value={academicBackground}
@@ -85,7 +88,9 @@ export default function CatOnboardingPage() {
           </div>
 
           <div className="form-group">
-            <label>Target IIMs</label>
+            <label>
+              <span className="ui-step-index">02</span>Target IIMs
+            </label>
             <div className="checkbox-grid">
               {COMMON_IIMS.map((iim) => (
                 <label key={iim} className="checkbox-item">
@@ -101,7 +106,9 @@ export default function CatOnboardingPage() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="targetPercentile">Target percentile</label>
+            <label htmlFor="targetPercentile">
+              <span className="ui-step-index">03</span>Target percentile
+            </label>
             <input
               id="targetPercentile"
               type="number"

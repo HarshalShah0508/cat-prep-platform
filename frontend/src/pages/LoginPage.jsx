@@ -1,11 +1,13 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { getCatProfile } from '../api/catProfileApi'
+import AuthLayout from '../components/auth/AuthLayout'
 
 export default function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -23,11 +25,12 @@ export default function LoginPage() {
     setSubmitting(true)
     try {
       await login({ email, password })
+      const redirectTo = location.state?.from?.pathname
       // New accounts have no CAT profile yet — send them to onboarding first.
       try {
         const profile = await getCatProfile()
         if (profile && profile.cat_academic_background) {
-          navigate('/dashboard')
+          navigate(redirectTo || '/dashboard')
         } else {
           navigate('/onboarding')
         }
@@ -46,9 +49,20 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="auth-page">
-      <div className="card auth-card">
-        <h1>Welcome back</h1>
+    <AuthLayout
+      eyebrow="Welcome back"
+      title="Keep the streak going"
+      body="Pick up right where you left off - your mock tests, PI practice, and weak-concept tracking are all waiting."
+      preview={
+        <>
+          <div className="ui-eyebrow">Last mock test</div>
+          <div className="ui-slab-stat-value" style={{ fontSize: '1.6rem' }}>94.2</div>
+          <div className="ui-slab-stat-label">percentile estimate</div>
+        </>
+      }
+    >
+      <div className="ui-card auth-card">
+        <h1>Log in</h1>
         <p className="text-muted">Log in to keep prepping for CAT.</p>
 
         {error && <div className="alert alert-error">{error}</div>}
@@ -87,6 +101,6 @@ export default function LoginPage() {
           New here? <Link to="/signup">Create an account</Link>
         </p>
       </div>
-    </div>
+    </AuthLayout>
   )
 }

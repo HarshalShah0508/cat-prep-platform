@@ -322,10 +322,10 @@ export default function CatPiSessionPage() {
 
       <div className="pi-session-header">
         <div>
-          <h1>AI Personal Interview Practice</h1>
-          <p className="text-muted">
+          <div className="ui-eyebrow">PI practice</div>
+          <h2 style={{ margin: 0 }}>
             Question {currentMainQuestionNumber} of {totalMainQuestions}
-          </p>
+          </h2>
           <div className="pi-progress-dots">
             {mainQuestions.map((question, index) => {
               let state = 'open'

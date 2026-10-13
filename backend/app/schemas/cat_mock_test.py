@@ -119,6 +119,12 @@ class ResultQuestionOut(BaseModel):
     marks_awarded: Optional[float] = None
 
 
+class WeakTopicOut(BaseModel):
+    section: str
+    topic: str
+    wrong_count: int
+
+
 class MockTestResultsResponse(BaseModel):
     id: int
     status: str
@@ -129,3 +135,4 @@ class MockTestResultsResponse(BaseModel):
     percentile_estimate: Optional[float] = None
     section_breakdown: List[SectionBreakdown]
     questions: List[ResultQuestionOut]
+    weak_topics: List[WeakTopicOut] = []

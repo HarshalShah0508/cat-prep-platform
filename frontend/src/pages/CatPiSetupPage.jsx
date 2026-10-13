@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { startPiSession } from '../api/catPiApi'
 import { getResumes, uploadResume } from '../api/catPiResumeApi'
 import { useCatPi } from '../context/CatPiContext'
+import PageHeader from '../components/ui/PageHeader'
 
 const UPLOAD_NEW_VALUE = '__upload_new__'
 
@@ -83,16 +84,15 @@ export default function CatPiSetupPage() {
 
   return (
     <div className="page-container">
-      <h1>AI Personal Interview Practice</h1>
-      <p className="text-muted">
-        A mock IIM-style panel will ask you ~8 questions spanning background, academics, current affairs,
-        why-MBA, and situational topics — with voice input, question read-aloud, and optional delivery
-        coaching via your mic/camera.
-      </p>
+      <PageHeader
+        eyebrow="PI practice"
+        title="AI Personal Interview Practice"
+        subtitle="A mock IIM-style panel will ask you ~8 questions spanning background, academics, current affairs, why-MBA, and situational topics — with voice input, question read-aloud, and optional delivery coaching via your mic/camera."
+      />
 
       {error && <div className="alert alert-error">{error}</div>}
 
-      <div className="card">
+      <div className="ui-card">
         {loadingResumes ? (
           <p className="text-muted">Loading resumes...</p>
         ) : (

@@ -7,10 +7,10 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [token, setToken] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false)
 
-  // Load persisted auth state on first mount. If nothing is stored, auto
-  // log in as a fixed dev user (DEV-ONLY: bypasses signup/login while the
-  // rest of the product is being built out — see authApi.devLogin).
+  // Load persisted auth state on first mount. If nothing is stored, the user
+  // is simply unauthenticated - ProtectedRoute sends them to /login.
   useEffect(() => {
     const storedToken = localStorage.getItem('access_token')
     const storedUser = localStorage.getItem('cat_user')
@@ -18,19 +18,12 @@ export function AuthProvider({ children }) {
       try {
         setToken(storedToken)
         setUser(JSON.parse(storedUser))
-        setLoading(false)
-        return
       } catch {
         localStorage.removeItem('access_token')
         localStorage.removeItem('cat_user')
       }
     }
-
-    authApi
-      .devLogin()
-      .then((data) => persist(data))
-      .catch(() => {})
-      .finally(() => setLoading(false))
+    setLoading(false)
   }, [])
 
   function persist(data) {
@@ -59,6 +52,14 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('cat_user')
   }
 
+  function promptLogin() {
+    setShowLoginPrompt(true)
+  }
+
+  function dismissLoginPrompt() {
+    setShowLoginPrompt(false)
+  }
+
   const value = {
     user,
     token,
@@ -67,6 +68,9 @@ export function AuthProvider({ children }) {
     signup,
     login,
     logout,
+    showLoginPrompt,
+    promptLogin,
+    dismissLoginPrompt,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

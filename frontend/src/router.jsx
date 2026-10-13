@@ -27,14 +27,7 @@ export default function AppRouter() {
           </ProtectedRoute>
         }
       />
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <DashboardPage />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/dashboard" element={<DashboardPage />} />
       <Route
         path="/mock-tests/new"
         element={

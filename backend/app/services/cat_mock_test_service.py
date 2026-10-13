@@ -45,6 +45,12 @@ FALLBACK_TOPICS = {
 
 DIFFICULTIES = ["easy", "medium", "hard"]
 
+# Some pre-2024 PYQ seed scripts stamp every question in a paper with a generic
+# section-name placeholder instead of a real topic (no per-question topic data
+# was transcribed for those papers). These aren't real topics, so topic-level
+# weak-area analysis must exclude them rather than report "weak at: QA".
+GENERIC_PLACEHOLDER_TOPICS = {"Quantitative Aptitude", "Data Interpretation & Logical Reasoning"}
+
 # Granular QA topics offered to a user picking topics for a custom practice test,
 # grouped under the 5 main syllabus categories for a two-level picker (category ->
 # specific topic) - richer than FALLBACK_TOPICS["QA"]'s 5 bare categories, since a
@@ -484,9 +490,21 @@ def assemble_mock_test(
                 if section == "QA" and random.random() < 0.3
                 else CatQuestionType.MCQ.value
             )
-            try:
-                data = _generate_ai_question(section, topic, difficulty, question_type)
-            except Exception:
+            data = None
+            for attempt in range(CUSTOM_GENERATION_MAX_ATTEMPTS):
+                if attempt > 0:
+                    # Give transient upstream rate-limiting ("high demand") a chance to
+                    # pass before hammering the same cooled-down keys again - same
+                    # backoff _generate_custom_topic_questions already uses.
+                    time.sleep(5)
+                try:
+                    data = _generate_ai_question(section, topic, difficulty, question_type)
+                    break
+                except Exception:
+                    data = None
+                    continue
+
+            if data is None:
                 continue
 
             snapshot = {

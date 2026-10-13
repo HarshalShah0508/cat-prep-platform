@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { startMockTest, getTopicOptions } from '../api/catMockTestApi'
 import { getAvailablePyqPapers } from '../api/catPyqApi'
 import { useCatMockTest } from '../context/CatMockTestContext'
+import PageHeader from '../components/ui/PageHeader'
 
 const ALL_SECTIONS = ['VARC', 'DILR', 'QA']
 const SLOT_LABELS = { slot1: 'Slot 1', slot2: 'Slot 2', slot3: 'Slot 3' }
@@ -157,10 +158,12 @@ export default function CatMockTestSetupPage() {
 
   return (
     <div className="page-container">
-      <div className="card">
-        <h1>Start a mock test</h1>
-        <p className="text-muted">Choose the format that matches what you want to practice.</p>
-
+      <PageHeader
+        eyebrow="Mock test"
+        title="Start a mock test"
+        subtitle="Choose the format that matches what you want to practice."
+      />
+      <div className="ui-card">
         {error && <div className="alert alert-error">{error}</div>}
 
         <form onSubmit={handleSubmit} noValidate>
@@ -177,6 +180,7 @@ export default function CatMockTestSetupPage() {
                 />
                 <span>Full mock (all sections)</span>
               </label>
+              <p className="option-hint">VARC, DILR, and QA back to back, 40 minutes each - the real exam sequence.</p>
               <label className="radio-item">
                 <input
                   type="radio"
@@ -187,6 +191,7 @@ export default function CatMockTestSetupPage() {
                 />
                 <span>Sectional test</span>
               </label>
+              <p className="option-hint">Just one or two sections, for focused practice without a full 2-hour sitting.</p>
               <label className="radio-item">
                 <input
                   type="radio"
@@ -197,58 +202,43 @@ export default function CatMockTestSetupPage() {
                 />
                 <span>Topic drill</span>
               </label>
+              <p className="option-hint">A short, freshly AI-generated set on one section/topic - fastest way to drill a weak spot.</p>
             </div>
           </div>
 
           {isTopicDrill ? (
             <>
-              <div className="form-group">
-                <label>Section</label>
-                <div className="radio-group">
-                  {DRILL_SECTIONS.map((section) => (
-                    <label key={section} className="radio-item">
-                      <input
-                        type="radio"
-                        name="drillSection"
-                        value={section}
-                        checked={drillSection === section}
-                        onChange={() => setDrillSection(section)}
-                      />
-                      <span>{section}</span>
-                    </label>
-                  ))}
+              <div className="form-row-group">
+                <div className="form-group">
+                  <label>Section</label>
+                  <select
+                    value={drillSection}
+                    onChange={(e) => setDrillSection(e.target.value)}
+                    className="select-input"
+                  >
+                    {DRILL_SECTIONS.map((section) => (
+                      <option key={section} value={section}>
+                        {section}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              </div>
 
-              <div className="form-group">
-                <label>Coverage</label>
-                <p className="text-muted">
-                  Questions are freshly generated for you each time, never reused from a
-                  previous practice test.
-                </p>
-                <div className="radio-group">
-                  <label className="radio-item">
-                    <input
-                      type="radio"
-                      name="topicMode"
-                      value="topic_wise"
-                      checked={topicMode === 'topic_wise'}
-                      onChange={() => setTopicMode('topic_wise')}
-                    />
-                    <span>Topic-wise</span>
-                  </label>
-                  <label className="radio-item">
-                    <input
-                      type="radio"
-                      name="topicMode"
-                      value="full_syllabus"
-                      checked={topicMode === 'full_syllabus'}
-                      onChange={() => setTopicMode('full_syllabus')}
-                    />
-                    <span>Full syllabus</span>
-                  </label>
+                <div className="form-group">
+                  <label>Coverage</label>
+                  <select
+                    value={topicMode}
+                    onChange={(e) => setTopicMode(e.target.value)}
+                    className="select-input"
+                  >
+                    <option value="topic_wise">Topic-wise (pick specific topics)</option>
+                    <option value="full_syllabus">Full syllabus</option>
+                  </select>
                 </div>
               </div>
+              <p className="option-hint" style={{ marginLeft: 0 }}>
+                Questions are freshly generated for you each time, never reused from a previous practice test.
+              </p>
 
               {topicMode === 'topic_wise' && (
                 <div className="form-group">
@@ -284,45 +274,33 @@ export default function CatMockTestSetupPage() {
                 </div>
               )}
 
-              <div className="form-group">
-                <label>Difficulty style</label>
-                <div className="radio-group">
-                  <label className="radio-item">
-                    <input
-                      type="radio"
-                      name="questionStyle"
-                      value="challenging"
-                      checked={questionStyle === 'challenging'}
-                      onChange={() => setQuestionStyle('challenging')}
-                    />
-                    <span>Tough &amp; lengthy - multi-step, disguised, non-direct (Recommended)</span>
-                  </label>
-                  <label className="radio-item">
-                    <input
-                      type="radio"
-                      name="questionStyle"
-                      value="standard"
-                      checked={questionStyle === 'standard'}
-                      onChange={() => setQuestionStyle('standard')}
-                    />
-                    <span>Standard difficulty</span>
-                  </label>
+              <div className="form-row-group">
+                <div className="form-group">
+                  <label>Difficulty style</label>
+                  <select
+                    value={questionStyle}
+                    onChange={(e) => setQuestionStyle(e.target.value)}
+                    className="select-input"
+                  >
+                    <option value="challenging">Tough &amp; lengthy (Recommended)</option>
+                    <option value="standard">Standard difficulty</option>
+                  </select>
                 </div>
-              </div>
 
-              <div className="form-group">
-                <label>Number of questions</label>
-                <select
-                  value={questionCount}
-                  onChange={(e) => setQuestionCount(Number(e.target.value))}
-                  className="select-input"
-                >
-                  {QUESTION_COUNT_OPTIONS.map((count) => (
-                    <option key={count} value={count}>
-                      {count}
-                    </option>
-                  ))}
-                </select>
+                <div className="form-group">
+                  <label>Number of questions</label>
+                  <select
+                    value={questionCount}
+                    onChange={(e) => setQuestionCount(Number(e.target.value))}
+                    className="select-input"
+                  >
+                    {QUESTION_COUNT_OPTIONS.map((count) => (
+                      <option key={count} value={count}>
+                        {count}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </>
           ) : (
@@ -339,6 +317,7 @@ export default function CatMockTestSetupPage() {
                   />
                   <span>Mixed - PYQs + new AI-generated (Recommended)</span>
                 </label>
+                <p className="option-hint">A shuffled blend from the real-paper bank and freshly generated questions.</p>
                 <label className="radio-item">
                   <input
                     type="radio"
@@ -349,6 +328,10 @@ export default function CatMockTestSetupPage() {
                   />
                   <span>PYQs only</span>
                 </label>
+                <p className="option-hint">
+                  Only real past-paper questions, but still shuffled/sampled across years - not the same as
+                  replaying one exact paper (that's PYQ Practice, below).
+                </p>
                 <label className="radio-item">
                   <input
                     type="radio"
@@ -359,10 +342,11 @@ export default function CatMockTestSetupPage() {
                   />
                   <span>New questions only (AI-generated)</span>
                 </label>
+                <p className="option-hint">Entirely fresh questions, never seen on a real CAT paper.</p>
               </div>
               <p className="text-muted">
-                Want a specific past paper instead of a shuffled mix? Try{' '}
-                <Link to="/pyq-tests">PYQ Practice</Link>.
+                Want to replay one exact real paper instead - same questions, same slot, same section split?
+                Use <Link to="/pyq-tests">PYQ Practice</Link> instead of this page.
               </p>
             </div>
           )}

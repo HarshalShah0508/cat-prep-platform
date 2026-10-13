@@ -23,6 +23,7 @@ from app.schemas.cat_mock_test import (
     SectionBreakdown,
     SectionStartResponse,
     SubmitResponse,
+    WeakTopicOut,
 )
 from app.services import cat_mock_test_generation_worker as worker
 from app.services import cat_mock_test_service, cat_weak_concept_service
@@ -246,6 +247,7 @@ def get_mock_test_results(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Test has not been submitted yet")
 
     breakdown_map: Dict[str, Dict[str, int]] = {}
+    wrong_topic_counts: Dict[tuple, int] = {}
     questions_out: List[ResultQuestionOut] = []
 
     for mtq in sorted(session.questions, key=lambda q: q.order_index):
@@ -264,6 +266,10 @@ def get_mock_test_results(
             stats["correct"] += 1
         else:
             stats["wrong"] += 1
+
+        if mtq.is_correct is False:
+            topic_key = (section, data.get("topic"))
+            wrong_topic_counts[topic_key] = wrong_topic_counts.get(topic_key, 0) + 1
 
         questions_out.append(
             ResultQuestionOut(
@@ -294,6 +300,16 @@ def get_mock_test_results(
         for section, s in breakdown_map.items()
     ]
 
+    weak_topics = sorted(
+        (
+            WeakTopicOut(section=section, topic=topic, wrong_count=count)
+            for (section, topic), count in wrong_topic_counts.items()
+            if count >= 2 and topic and topic not in cat_mock_test_service.GENERIC_PLACEHOLDER_TOPICS
+        ),
+        key=lambda w: w.wrong_count,
+        reverse=True,
+    )
+
     return MockTestResultsResponse(
         id=session.id,
         status=session.status.value,
@@ -304,4 +320,5 @@ def get_mock_test_results(
         percentile_estimate=session.percentile_estimate,
         section_breakdown=section_breakdown,
         questions=questions_out,
+        weak_topics=weak_topics,
     )

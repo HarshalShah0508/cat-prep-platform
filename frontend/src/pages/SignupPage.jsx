@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import AuthLayout from '../components/auth/AuthLayout'
 
 export default function SignupPage() {
   const { signup } = useAuth()
@@ -43,8 +44,21 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="auth-page">
-      <div className="card auth-card">
+    <AuthLayout
+      eyebrow="Get started"
+      title="Start prepping smarter"
+      body="Full mocks, real past papers, AI-scored Personal Interview practice, and automatic weak-topic tracking - all in one place."
+      preview={
+        <>
+          <div className="ui-eyebrow">What you get</div>
+          <p style={{ margin: '0.4rem 0 0', fontSize: '0.92rem', color: 'var(--ui-text-soft)' }}>
+            1,100+ real PYQ questions, fresh AI-generated drills, and a results page that tells
+            you exactly which topics to work on next.
+          </p>
+        </>
+      }
+    >
+      <div className="ui-card auth-card">
         <h1>Create your account</h1>
         <p className="text-muted">Start prepping smarter for CAT.</p>
 
@@ -108,6 +122,6 @@ export default function SignupPage() {
           Already have an account? <Link to="/login">Log in</Link>
         </p>
       </div>
-    </div>
+    </AuthLayout>
   )
 }
