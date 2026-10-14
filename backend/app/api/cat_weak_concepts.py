@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.cat_mock_tests import build_mock_test_detail_response
+from app.core.feature_flags import AI_DISABLED_MESSAGE, AI_FEATURES_DISABLED
 from app.database.database import get_db
 from app.models.user import User
 from app.schemas.cat_mock_test import MockTestDetailResponse
@@ -23,6 +24,9 @@ def get_weak_concepts(db: Session = Depends(get_db), current_user: User = Depend
 def practice_weak_concept(
     weak_concept_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
+    if AI_FEATURES_DISABLED:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=AI_DISABLED_MESSAGE)
+
     try:
         session = cat_weak_concept_service.start_drill(db, current_user, weak_concept_id)
     except ValueError as exc:

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
+from app.core.feature_flags import AI_DISABLED_MESSAGE, AI_FEATURES_DISABLED
 from app.core.rate_limiter import limiter
 from app.database.database import get_db
 from app.models.cat_pi_resume import CatPIResume
@@ -71,6 +72,9 @@ def start_pi(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    if AI_FEATURES_DISABLED:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=AI_DISABLED_MESSAGE)
+
     resume = None
     if payload.resume_id is not None:
         resume = (
@@ -131,6 +135,9 @@ def answer_pi_question(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    if AI_FEATURES_DISABLED:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=AI_DISABLED_MESSAGE)
+
     session = _get_owned_session(db, session_id, current_user)
 
     pi_question = (
@@ -171,6 +178,9 @@ def follow_up_pi_question(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    if AI_FEATURES_DISABLED:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=AI_DISABLED_MESSAGE)
+
     session = _get_owned_session(db, session_id, current_user)
 
     answer = (

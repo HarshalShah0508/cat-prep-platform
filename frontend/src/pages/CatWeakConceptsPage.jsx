@@ -5,6 +5,7 @@ import { useCatMockTest } from '../context/CatMockTestContext'
 import PageHeader from '../components/ui/PageHeader'
 import Pill from '../components/ui/Pill'
 import ListRow from '../components/ui/ListRow'
+import { AI_FEATURES_DISABLED, AI_DISABLED_MESSAGE } from '../config/featureFlags'
 
 function statusTone(status) {
   switch (status) {
@@ -71,6 +72,7 @@ export default function CatWeakConceptsPage() {
         stats={[{ value: concepts.length, label: 'Flagged topics', accent: true }]}
       />
 
+      {AI_FEATURES_DISABLED && <div className="alert alert-error">{AI_DISABLED_MESSAGE}</div>}
       {error && <div className="alert alert-error">{error}</div>}
 
       {concepts.length === 0 ? (
@@ -94,7 +96,7 @@ export default function CatWeakConceptsPage() {
                   type="button"
                   className="btn btn-secondary btn-sm"
                   onClick={() => handlePractice(c.id)}
-                  disabled={practicingId === c.id}
+                  disabled={practicingId === c.id || AI_FEATURES_DISABLED}
                 >
                   {practicingId === c.id ? 'Starting...' : 'Practice'}
                 </button>

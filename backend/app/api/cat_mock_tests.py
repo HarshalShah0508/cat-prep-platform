@@ -4,6 +4,7 @@ from typing import Dict, List
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.feature_flags import AI_DISABLED_MESSAGE, AI_FEATURES_DISABLED
 from app.database.database import get_db
 from app.models.cat_mock_test_session import CatMockTestSession
 from app.models.enums import CatMockTestStatus, CatTestType
@@ -100,6 +101,10 @@ def start_mock_test(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    needs_ai = bool(payload.topics) or payload.question_source != "pyq_only"
+    if AI_FEATURES_DISABLED and needs_ai:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=AI_DISABLED_MESSAGE)
+
     if payload.topics:
         if len(payload.sections) != 1 or payload.sections[0] not in cat_mock_test_service.TOPIC_OPTIONS_BY_SECTION:
             raise HTTPException(

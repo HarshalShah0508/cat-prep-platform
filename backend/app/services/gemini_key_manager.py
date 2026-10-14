@@ -1,4 +1,5 @@
 import logging
+import threading
 import time
 from typing import Any, Optional, Type, TypeVar
 
@@ -26,6 +27,8 @@ class GeminiKeyManager:
             raise ValueError("No Gemini API keys configured")
         self._cooldown_until = {key: 0.0 for key in self._api_keys}
         self._clients: dict = {}
+        self._cursor = 0
+        self._cursor_lock = threading.Lock()
 
     def _client_for(self, api_key: str) -> "genai.Client":
         if api_key not in self._clients:
@@ -41,9 +44,18 @@ class GeminiKeyManager:
         return self._clients[api_key]
 
     def _ordered_keys(self) -> list:
+        """Round-robin the starting key each call so load actually spreads across all
+        configured keys instead of always hammering the first one while it's healthy -
+        keys still in cooldown are pushed to the end as a last-resort fallback."""
+        num_keys = len(self._api_keys)
+        with self._cursor_lock:
+            start = self._cursor
+            self._cursor = (self._cursor + 1) % num_keys
+        rotated = self._api_keys[start:] + self._api_keys[:start]
+
         now = time.time()
-        available = [k for k in self._api_keys if self._cooldown_until.get(k, 0.0) <= now]
-        cooling_down = [k for k in self._api_keys if self._cooldown_until.get(k, 0.0) > now]
+        available = [k for k in rotated if self._cooldown_until.get(k, 0.0) <= now]
+        cooling_down = [k for k in rotated if self._cooldown_until.get(k, 0.0) > now]
         return available + cooling_down
 
     def _mark_cooldown(self, api_key: str) -> None:

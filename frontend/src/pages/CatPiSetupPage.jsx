@@ -4,6 +4,7 @@ import { startPiSession } from '../api/catPiApi'
 import { getResumes, uploadResume } from '../api/catPiResumeApi'
 import { useCatPi } from '../context/CatPiContext'
 import PageHeader from '../components/ui/PageHeader'
+import { AI_FEATURES_DISABLED, AI_DISABLED_MESSAGE } from '../config/featureFlags'
 
 const UPLOAD_NEW_VALUE = '__upload_new__'
 
@@ -90,6 +91,7 @@ export default function CatPiSetupPage() {
         subtitle="A mock IIM-style panel will ask you ~8 questions spanning background, academics, current affairs, why-MBA, and situational topics — with voice input, question read-aloud, and optional delivery coaching via your mic/camera."
       />
 
+      {AI_FEATURES_DISABLED && <div className="alert alert-error">{AI_DISABLED_MESSAGE}</div>}
       {error && <div className="alert alert-error">{error}</div>}
 
       <div className="ui-card">
@@ -98,7 +100,7 @@ export default function CatPiSetupPage() {
         ) : (
           <div className="form-group">
             <label>Resume (optional)</label>
-            <select value={resumeId} onChange={handleResumeSelectChange} disabled={uploading}>
+            <select value={resumeId} onChange={handleResumeSelectChange} disabled={uploading || AI_FEATURES_DISABLED}>
               <option value="">No resume</option>
               {resumes.map((resume) => (
                 <option key={resume.id} value={resume.id}>
@@ -107,14 +109,24 @@ export default function CatPiSetupPage() {
               ))}
               <option value={UPLOAD_NEW_VALUE}>Upload new resume...</option>
             </select>
-            <input type="file" accept="application/pdf" onChange={handleResumeFileChange} disabled={uploading} />
+            <input
+              type="file"
+              accept="application/pdf"
+              onChange={handleResumeFileChange}
+              disabled={uploading || AI_FEATURES_DISABLED}
+            />
             <p className="text-muted">
               {uploading ? 'Uploading resume...' : 'Questions will be tailored to this resume, if selected.'}
             </p>
           </div>
         )}
 
-        <button type="button" className="btn btn-primary" onClick={handleStart} disabled={starting || uploading}>
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={handleStart}
+          disabled={starting || uploading || AI_FEATURES_DISABLED}
+        >
           {starting ? 'Starting...' : 'Start Interview'}
         </button>
       </div>
