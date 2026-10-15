@@ -26,6 +26,10 @@ export function startMockTest({
     .then((res) => res.data)
 }
 
+export function listMockTests() {
+  return client.get(BASE).then((res) => res.data)
+}
+
 export function getTopicOptions(section) {
   return client.get(`${BASE}/topic-options`, { params: { section } }).then((res) => res.data)
 }

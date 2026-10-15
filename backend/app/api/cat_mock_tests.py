@@ -14,6 +14,7 @@ from app.schemas.cat_mock_test import (
     MockTestQuestionOut,
     MockTestResultsResponse,
     MockTestSectionOut,
+    MockTestSessionSummary,
     MockTestStartRequest,
     MockTestStartResponse,
     MockTestStatusResponse,
@@ -135,6 +136,28 @@ def start_mock_test(
     return MockTestStartResponse(session_id=session.id, status=session.status.value)
 
 
+@router.get("", response_model=List[MockTestSessionSummary])
+def list_mock_tests(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    sessions = (
+        db.query(CatMockTestSession)
+        .filter(CatMockTestSession.user_id == current_user.id)
+        .order_by(CatMockTestSession.created_at.desc())
+        .all()
+    )
+    return [
+        MockTestSessionSummary(
+            id=s.id,
+            test_type=s.test_type.value,
+            status=s.status.value,
+            sections_included=s.sections_included or [],
+            raw_score=s.raw_score,
+            percentile_estimate=s.percentile_estimate,
+            created_at=s.created_at,
+        )
+        for s in sessions
+    ]
+
+
 @router.get("/topic-options", response_model=Dict[str, List[str]])
 def get_topic_options(section: str):
     groups = cat_mock_test_service.TOPIC_GROUPS_BY_SECTION.get(section)
@@ -247,7 +270,6 @@ def get_mock_test_results(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Test has not been submitted yet")
 
     breakdown_map: Dict[str, Dict[str, int]] = {}
-    wrong_topic_counts: Dict[tuple, int] = {}
     questions_out: List[ResultQuestionOut] = []
 
     for mtq in sorted(session.questions, key=lambda q: q.order_index):
@@ -266,10 +288,6 @@ def get_mock_test_results(
             stats["correct"] += 1
         else:
             stats["wrong"] += 1
-
-        if mtq.is_correct is False:
-            topic_key = (section, data.get("topic"))
-            wrong_topic_counts[topic_key] = wrong_topic_counts.get(topic_key, 0) + 1
 
         questions_out.append(
             ResultQuestionOut(
@@ -300,11 +318,13 @@ def get_mock_test_results(
         for section, s in breakdown_map.items()
     ]
 
+    topic_stats = cat_mock_test_service.compute_session_topic_stats(session)
     weak_topics = sorted(
         (
-            WeakTopicOut(section=section, topic=topic, wrong_count=count)
-            for (section, topic), count in wrong_topic_counts.items()
-            if count >= 2 and topic and topic not in cat_mock_test_service.GENERIC_PLACEHOLDER_TOPICS
+            WeakTopicOut(section=section, topic=topic, wrong_count=counts["wrong"])
+            for section, topics in topic_stats.items()
+            for topic, counts in topics.items()
+            if counts["wrong"] >= 2
         ),
         key=lambda w: w.wrong_count,
         reverse=True,

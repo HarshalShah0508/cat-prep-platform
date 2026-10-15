@@ -158,7 +158,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="ui-card">
-            <div className="ui-eyebrow">Study plan</div>
+            <div className="ui-eyebrow">Weak spots</div>
             <h2>Weak concepts</h2>
             {isAuthenticated ? (
               <p className="text-muted">
@@ -170,6 +170,17 @@ export default function DashboardPage() {
             )}
             <AuthGatedLink to="/weak-concepts" className="btn btn-secondary btn-sm">
               View weak concepts →
+            </AuthGatedLink>
+          </div>
+
+          <div className="ui-card">
+            <div className="ui-eyebrow">Study plan</div>
+            <h2>Day-by-day prep schedule</h2>
+            <p className="text-muted">
+              A 2-hour/day plan to the exam, built from your mock test performance.
+            </p>
+            <AuthGatedLink to="/study-plan" className="btn btn-secondary btn-sm">
+              View study plan →
             </AuthGatedLink>
           </div>
         </div>

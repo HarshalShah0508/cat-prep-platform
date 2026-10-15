@@ -56,6 +56,9 @@ export default function Navbar() {
           <NavLink to="/weak-concepts" onClick={gateClick} className={({ isActive }) => (isActive ? 'active' : '')}>
             Weak Concepts
           </NavLink>
+          <NavLink to="/study-plan" onClick={gateClick} className={({ isActive }) => (isActive ? 'active' : '')}>
+            Study Plan
+          </NavLink>
         </nav>
         <div className="navbar-user">
           <ThemeToggle />

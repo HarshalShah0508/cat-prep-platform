@@ -22,6 +22,16 @@ class MockTestStartResponse(BaseModel):
     status: str
 
 
+class MockTestSessionSummary(BaseModel):
+    id: int
+    test_type: str
+    status: str
+    sections_included: List[str]
+    raw_score: Optional[float] = None
+    percentile_estimate: Optional[float] = None
+    created_at: datetime
+
+
 class MockTestStatusResponse(BaseModel):
     status: str
 

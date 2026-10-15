@@ -643,6 +643,29 @@ def get_question_data(mtq: CatMockTestQuestion) -> dict:
     }
 
 
+def compute_session_topic_stats(session: CatMockTestSession) -> Dict[str, Dict[str, Dict[str, int]]]:
+    """Per-section, per-topic correct/wrong counts for every graded question in a session.
+    Skipped/ungraded questions and generic placeholder topics don't count either way -
+    shared by the results route and the study-plan generator so both read the same numbers."""
+    stats: Dict[str, Dict[str, Dict[str, int]]] = {}
+    for mtq in session.questions:
+        data = get_question_data(mtq)
+        section = data.get("section")
+        topic = data.get("topic")
+        if not section or not topic or topic in GENERIC_PLACEHOLDER_TOPICS:
+            continue
+        if mtq.is_correct is None:
+            continue
+
+        topic_stats = stats.setdefault(section, {}).setdefault(topic, {"correct": 0, "wrong": 0})
+        if mtq.is_correct:
+            topic_stats["correct"] += 1
+        else:
+            topic_stats["wrong"] += 1
+
+    return stats
+
+
 def _flag_weak_concepts(db: Session, user_id: int, wrong_topic_counts: Dict[tuple, int]) -> None:
     user = db.query(User).filter(User.id == user_id).first()
     if user is None:

@@ -11,6 +11,7 @@ from app.api import (
     cat_profile,
     cat_pyq,
     cat_resume,
+    cat_study_plan,
     cat_weak_concepts,
     dashboard,
 )
@@ -38,6 +39,7 @@ app.include_router(cat_pyq.router)
 app.include_router(cat_pi.router)
 app.include_router(cat_resume.router)
 app.include_router(cat_weak_concepts.router)
+app.include_router(cat_study_plan.router)
 app.include_router(dashboard.router)
 
 

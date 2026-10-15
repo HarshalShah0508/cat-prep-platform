@@ -15,6 +15,7 @@ import CatPiSetupPage from './pages/CatPiSetupPage'
 import CatPiSessionPage from './pages/CatPiSessionPage'
 import CatPiResultsPage from './pages/CatPiResultsPage'
 import CatWeakConceptsPage from './pages/CatWeakConceptsPage'
+import CatStudyPlanPage from './pages/CatStudyPlanPage'
 
 export default function AppRouter() {
   return (
@@ -95,6 +96,14 @@ export default function AppRouter() {
         element={
           <ProtectedRoute>
             <CatWeakConceptsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/study-plan"
+        element={
+          <ProtectedRoute>
+            <CatStudyPlanPage />
           </ProtectedRoute>
         }
       />
