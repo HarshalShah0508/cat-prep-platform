@@ -38,6 +38,18 @@ class Settings:
             raise ValueError("SECRET_KEY environment variable is required.")
         self.secret_key: str = secret_key
 
+        brevo_api_key = os.environ.get("BREVO_API_KEY")
+        if not brevo_api_key:
+            raise ValueError("BREVO_API_KEY environment variable is required.")
+        self.brevo_api_key: str = brevo_api_key
+
+        brevo_sender_email = os.environ.get("BREVO_SENDER_EMAIL")
+        if not brevo_sender_email:
+            raise ValueError("BREVO_SENDER_EMAIL environment variable is required.")
+        self.brevo_sender_email: str = brevo_sender_email
+
+        self.brevo_sender_name: str = os.environ.get("BREVO_SENDER_NAME", "CAT Prep Platform")
+
         self.jwt_algorithm: str = os.environ.get("JWT_ALGORITHM", "HS256")
         self.jwt_expire_minutes: int = int(os.environ.get("JWT_EXPIRE_MINUTES", "1440"))
         self.frontend_origin: str = os.environ.get("FRONTEND_ORIGIN", "http://localhost:5173")

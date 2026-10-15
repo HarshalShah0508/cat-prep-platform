@@ -7,3 +7,19 @@ export function signup({ email, password, username }) {
 export function login({ email, password }) {
   return client.post('/auth/login', { email, password }).then((res) => res.data)
 }
+
+export function verifyEmail({ email, otp_code }) {
+  return client.post('/auth/verify-email', { email, otp_code }).then((res) => res.data)
+}
+
+export function resendVerification({ email }) {
+  return client.post('/auth/resend-verification', { email }).then((res) => res.data)
+}
+
+export function forgotPassword({ email }) {
+  return client.post('/auth/forgot-password', { email }).then((res) => res.data)
+}
+
+export function resetPassword({ email, otp_code, new_password }) {
+  return client.post('/auth/reset-password', { email, otp_code, new_password }).then((res) => res.data)
+}

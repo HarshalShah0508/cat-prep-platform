@@ -18,3 +18,9 @@ services:
         value: HS256
       - key: JWT_EXPIRE_MINUTES
         value: "1440"
+      - key: BREVO_API_KEY
+        sync: false
+      - key: BREVO_SENDER_EMAIL
+        sync: false
+      - key: BREVO_SENDER_NAME
+        value: "CAT Prep Platform"

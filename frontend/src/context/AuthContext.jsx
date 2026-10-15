@@ -34,15 +34,18 @@ export function AuthProvider({ children }) {
   }
 
   async function signup({ email, password, username }) {
-    const data = await authApi.signup({ email, password, username })
-    persist(data)
-    return data
+    // No token comes back here - the account isn't usable until the email is verified.
+    return authApi.signup({ email, password, username })
   }
 
   async function login({ email, password }) {
     const data = await authApi.login({ email, password })
     persist(data)
     return data
+  }
+
+  function completeAuth(data) {
+    persist(data)
   }
 
   function logout() {
@@ -68,6 +71,7 @@ export function AuthProvider({ children }) {
     signup,
     login,
     logout,
+    completeAuth,
     showLoginPrompt,
     promptLogin,
     dismissLoginPrompt,

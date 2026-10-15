@@ -1,4 +1,4 @@
-from sqlalchemy import ARRAY, Column, DateTime, Float, Integer, String
+from sqlalchemy import ARRAY, Boolean, Column, DateTime, Float, Integer, String
 from sqlalchemy.sql import func
 
 from app.database.database import Base
@@ -11,6 +11,12 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     username = Column(String, nullable=False)
+
+    is_verified = Column(Boolean, nullable=False, default=False)
+    email_verification_otp_hash = Column(String, nullable=True)
+    email_verification_otp_expires_at = Column(DateTime(timezone=True), nullable=True)
+    password_reset_otp_hash = Column(String, nullable=True)
+    password_reset_otp_expires_at = Column(DateTime(timezone=True), nullable=True)
 
     cat_academic_background = Column(String, nullable=True)
     cat_target_iims = Column(ARRAY(String), nullable=True)

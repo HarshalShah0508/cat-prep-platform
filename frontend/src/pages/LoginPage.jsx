@@ -38,6 +38,12 @@ export default function LoginPage() {
         navigate('/onboarding')
       }
     } catch (err) {
+      if (err?.response?.status === 403 && err?.response?.data?.detail === 'EMAIL_NOT_VERIFIED') {
+        navigate('/verify-email', {
+          state: { email, notice: 'Please verify your email before logging in. Enter the code below to continue.' },
+        })
+        return
+      }
       const message =
         err?.response?.data?.detail ||
         err?.response?.data?.message ||
@@ -91,6 +97,10 @@ export default function LoginPage() {
               placeholder="••••••••"
             />
           </div>
+
+          <p className="auth-switch" style={{ textAlign: 'right', marginTop: '-0.5rem' }}>
+            <Link to="/forgot-password">Forgot password?</Link>
+          </p>
 
           <button type="submit" className="btn btn-primary btn-block" disabled={submitting}>
             {submitting ? 'Logging in...' : 'Log in'}

@@ -30,8 +30,8 @@ export default function SignupPage() {
     setSubmitting(true)
     try {
       await signup({ email, password, username })
-      // Brand-new accounts always need onboarding before the dashboard.
-      navigate('/onboarding')
+      // Account isn't usable yet - needs the emailed OTP before it can log in.
+      navigate('/verify-email', { state: { email } })
     } catch (err) {
       const message =
         err?.response?.data?.detail ||
