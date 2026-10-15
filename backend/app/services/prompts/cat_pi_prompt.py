@@ -1,23 +1,29 @@
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 BASE_QUESTION_COUNT = 8
 
 
 def build_cat_pi_batch_prompt(
-    target_iims: Optional[List[str]],
-    target_percentile: Optional[float],
+    target_percentile_min: Optional[float],
+    target_percentile_max: Optional[float],
     resume_text_or_none: Optional[str],
     count: int = BASE_QUESTION_COUNT,
 ) -> str:
     """Builds a single prompt that asks Gemini for ALL questions of a PI session at once
     (batch-upfront, mirroring InterviewAI's generate-questions call), instead of the old
     one-question-at-a-time live generation."""
-    iims_text = ", ".join(target_iims) if target_iims else "a range of top IIMs"
-    percentile_text = (
-        f"The candidate is targeting roughly the {target_percentile:.0f}th percentile.\n"
-        if target_percentile
-        else ""
-    )
+    if target_percentile_min and target_percentile_max:
+        if target_percentile_min == target_percentile_max:
+            percentile_text = (
+                f"The candidate is targeting roughly the {target_percentile_min:.0f}th percentile.\n"
+            )
+        else:
+            percentile_text = (
+                f"The candidate is targeting roughly the {target_percentile_min:.0f}-"
+                f"{target_percentile_max:.0f}th percentile range.\n"
+            )
+    else:
+        percentile_text = ""
 
     if resume_text_or_none:
         resume_section = (
@@ -33,7 +39,7 @@ def build_cat_pi_batch_prompt(
 
     return f"""You are a generic IIM Personal Interview (PI) panel conducting a CAT/MBA
 admissions interview. You are NOT representing any single specific IIM by name - behave as a
-composite, generic IIM panel. The candidate is targeting: {iims_text}.
+composite, generic IIM panel.
 {percentile_text}
 {resume_section}
 Generate EXACTLY {count} interview questions for this PI session, covering a natural spread

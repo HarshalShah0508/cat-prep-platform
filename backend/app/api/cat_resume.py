@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, File, HTTPException, Request, Response, UploadFile, status
 from sqlalchemy.orm import Session
 
-from app.core.feature_flags import AI_DISABLED_MESSAGE, AI_FEATURES_DISABLED
 from app.core.rate_limiter import limiter
 from app.database.database import get_db
 from app.models.user import User
@@ -21,9 +20,6 @@ def upload_resume(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    if AI_FEATURES_DISABLED:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=AI_DISABLED_MESSAGE)
-
     if file.content_type != "application/pdf":
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only PDF files are allowed")
 

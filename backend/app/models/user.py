@@ -1,4 +1,4 @@
-from sqlalchemy import ARRAY, Boolean, Column, DateTime, Float, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String
 from sqlalchemy.sql import func
 
 from app.database.database import Base
@@ -19,8 +19,10 @@ class User(Base):
     password_reset_otp_expires_at = Column(DateTime(timezone=True), nullable=True)
 
     cat_academic_background = Column(String, nullable=True)
-    cat_target_iims = Column(ARRAY(String), nullable=True)
-    cat_target_percentile = Column(Float, nullable=True)
+    cat_years_experience_band = Column(String, nullable=True)
+    cat_current_company = Column(String, nullable=True)
+    cat_target_percentile_min = Column(Float, nullable=True)
+    cat_target_percentile_max = Column(Float, nullable=True)
     cat_weak_concepts_flagged_total = Column(Integer, nullable=False, default=0)
     cat_weak_concepts_resolved_total = Column(Integer, nullable=False, default=0)
 

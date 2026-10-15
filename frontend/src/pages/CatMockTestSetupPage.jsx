@@ -4,7 +4,6 @@ import { startMockTest, getTopicOptions } from '../api/catMockTestApi'
 import { getAvailablePyqPapers } from '../api/catPyqApi'
 import { useCatMockTest } from '../context/CatMockTestContext'
 import PageHeader from '../components/ui/PageHeader'
-import { AI_FEATURES_DISABLED, AI_DISABLED_MESSAGE } from '../config/featureFlags'
 
 const ALL_SECTIONS = ['VARC', 'DILR', 'QA']
 const SLOT_LABELS = { slot1: 'Slot 1', slot2: 'Slot 2', slot3: 'Slot 3' }
@@ -16,7 +15,7 @@ export default function CatMockTestSetupPage() {
   const { trackSession } = useCatMockTest()
   const [testType, setTestType] = useState('full_mock')
   const [sections, setSections] = useState(ALL_SECTIONS)
-  const [questionSource, setQuestionSource] = useState(AI_FEATURES_DISABLED ? 'pyq_only' : 'mixed')
+  const [questionSource, setQuestionSource] = useState('mixed')
   const [papers, setPapers] = useState([])
   const [pyqYear, setPyqYear] = useState('any')
   const [pyqSlot, setPyqSlot] = useState('any')
@@ -165,12 +164,6 @@ export default function CatMockTestSetupPage() {
         subtitle="Choose the format that matches what you want to practice."
       />
       <div className="ui-card">
-        {AI_FEATURES_DISABLED && (
-          <div className="alert alert-error">
-            {AI_DISABLED_MESSAGE} AI-generated question options (topic drill, mixed, new-questions-only) are
-            disabled for now - PYQ-only tests still work.
-          </div>
-        )}
         {error && <div className="alert alert-error">{error}</div>}
 
         <form onSubmit={handleSubmit} noValidate>
@@ -206,7 +199,6 @@ export default function CatMockTestSetupPage() {
                   value="topic_drill"
                   checked={testType === 'topic_drill'}
                   onChange={() => setTestType('topic_drill')}
-                  disabled={AI_FEATURES_DISABLED}
                 />
                 <span>Topic drill</span>
               </label>
@@ -322,7 +314,6 @@ export default function CatMockTestSetupPage() {
                     value="mixed"
                     checked={questionSource === 'mixed'}
                     onChange={() => setQuestionSource('mixed')}
-                    disabled={AI_FEATURES_DISABLED}
                   />
                   <span>Mixed - PYQs + new AI-generated (Recommended)</span>
                 </label>
@@ -348,7 +339,6 @@ export default function CatMockTestSetupPage() {
                     value="ai_only"
                     checked={questionSource === 'ai_only'}
                     onChange={() => setQuestionSource('ai_only')}
-                    disabled={AI_FEATURES_DISABLED}
                   />
                   <span>New questions only (AI-generated)</span>
                 </label>

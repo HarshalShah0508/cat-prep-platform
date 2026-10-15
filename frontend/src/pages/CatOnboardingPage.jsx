@@ -2,41 +2,43 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { updateCatProfile } from '../api/catProfileApi'
 
-const COMMON_IIMS = [
-  'Ahmedabad',
-  'Bangalore',
-  'Calcutta',
-  'Lucknow',
-  'Kozhikode',
-  'Indore',
-  'Other',
+const EXPERIENCE_BANDS = [
+  { value: 'fresher', label: 'Fresher (no work experience)' },
+  { value: '0_to_1', label: '0-1 years' },
+  { value: '1_to_3', label: '1-3 years' },
+  { value: '3_to_5', label: '3-5 years' },
+  { value: '5_plus', label: '5+ years' },
+]
+
+const PERCENTILE_BANDS = [
+  { value: 'below_90', label: 'Below 90', min: 0, max: 90 },
+  { value: '90_to_95', label: '90-95', min: 90, max: 95 },
+  { value: '95_to_99', label: '95-99', min: 95, max: 99 },
+  { value: '99_plus', label: '99+', min: 99, max: 100 },
 ]
 
 export default function CatOnboardingPage() {
   const navigate = useNavigate()
   const [academicBackground, setAcademicBackground] = useState('engineering')
-  const [selectedIims, setSelectedIims] = useState([])
-  const [targetPercentile, setTargetPercentile] = useState('')
+  const [experienceBand, setExperienceBand] = useState('fresher')
+  const [currentCompany, setCurrentCompany] = useState('')
+  const [notWorking, setNotWorking] = useState(false)
+  const [percentileBand, setPercentileBand] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  function toggleIim(iim) {
-    setSelectedIims((prev) =>
-      prev.includes(iim) ? prev.filter((item) => item !== iim) : [...prev, iim],
-    )
+  function handleNotWorkingChange(checked) {
+    setNotWorking(checked)
+    if (checked) setCurrentCompany('')
   }
 
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
 
-    if (selectedIims.length === 0) {
-      setError('Please select at least one target IIM.')
-      return
-    }
-    const percentileNum = Number(targetPercentile)
-    if (!targetPercentile || Number.isNaN(percentileNum) || percentileNum <= 0 || percentileNum > 100) {
-      setError('Please enter a valid target percentile between 0 and 100.')
+    const band = PERCENTILE_BANDS.find((b) => b.value === percentileBand)
+    if (!band) {
+      setError('Please select a target percentile range.')
       return
     }
 
@@ -44,8 +46,10 @@ export default function CatOnboardingPage() {
     try {
       await updateCatProfile({
         cat_academic_background: academicBackground,
-        cat_target_iims: selectedIims,
-        cat_target_percentile: percentileNum,
+        cat_years_experience_band: experienceBand,
+        cat_current_company: notWorking ? '' : currentCompany,
+        cat_target_percentile_min: band.min,
+        cat_target_percentile_max: band.max,
       })
       navigate('/dashboard')
     } catch (err) {
@@ -88,37 +92,62 @@ export default function CatOnboardingPage() {
           </div>
 
           <div className="form-group">
-            <label>
-              <span className="ui-step-index">02</span>Target IIMs
+            <label htmlFor="experienceBand">
+              <span className="ui-step-index">02</span>Years of experience
             </label>
-            <div className="checkbox-grid">
-              {COMMON_IIMS.map((iim) => (
-                <label key={iim} className="checkbox-item">
-                  <input
-                    type="checkbox"
-                    checked={selectedIims.includes(iim)}
-                    onChange={() => toggleIim(iim)}
-                  />
-                  <span>IIM {iim}</span>
-                </label>
+            <select
+              id="experienceBand"
+              value={experienceBand}
+              onChange={(e) => setExperienceBand(e.target.value)}
+            >
+              {EXPERIENCE_BANDS.map((band) => (
+                <option key={band.value} value={band.value}>
+                  {band.label}
+                </option>
               ))}
-            </div>
+            </select>
           </div>
 
           <div className="form-group">
-            <label htmlFor="targetPercentile">
-              <span className="ui-step-index">03</span>Target percentile
+            <label htmlFor="currentCompany">
+              <span className="ui-step-index">03</span>Current company
             </label>
             <input
-              id="targetPercentile"
-              type="number"
-              min="0"
-              max="100"
-              step="0.1"
-              value={targetPercentile}
-              onChange={(e) => setTargetPercentile(e.target.value)}
-              placeholder="e.g. 99.5"
+              id="currentCompany"
+              type="text"
+              value={currentCompany}
+              onChange={(e) => setCurrentCompany(e.target.value)}
+              disabled={notWorking}
+              placeholder="e.g. TCS"
             />
+            <label className="checkbox-item" style={{ marginTop: '0.5rem' }}>
+              <input
+                type="checkbox"
+                checked={notWorking}
+                onChange={(e) => handleNotWorkingChange(e.target.checked)}
+              />
+              <span>I'm a student / not currently working</span>
+            </label>
+          </div>
+
+          <div className="form-group">
+            <label>
+              <span className="ui-step-index">04</span>Target percentile range
+            </label>
+            <div className="radio-group">
+              {PERCENTILE_BANDS.map((band) => (
+                <label key={band.value} className="radio-item">
+                  <input
+                    type="radio"
+                    name="percentileBand"
+                    value={band.value}
+                    checked={percentileBand === band.value}
+                    onChange={() => setPercentileBand(band.value)}
+                  />
+                  <span>{band.label}</span>
+                </label>
+              ))}
+            </div>
           </div>
 
           <button type="submit" className="btn btn-primary btn-block" disabled={submitting}>

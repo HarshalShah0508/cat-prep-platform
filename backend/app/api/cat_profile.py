@@ -17,10 +17,14 @@ def update_profile(
 ):
     if payload.cat_academic_background is not None:
         current_user.cat_academic_background = payload.cat_academic_background
-    if payload.cat_target_iims is not None:
-        current_user.cat_target_iims = payload.cat_target_iims
-    if payload.cat_target_percentile is not None:
-        current_user.cat_target_percentile = payload.cat_target_percentile
+    if payload.cat_years_experience_band is not None:
+        current_user.cat_years_experience_band = payload.cat_years_experience_band
+    if payload.cat_current_company is not None:
+        current_user.cat_current_company = payload.cat_current_company
+    if payload.cat_target_percentile_min is not None:
+        current_user.cat_target_percentile_min = payload.cat_target_percentile_min
+    if payload.cat_target_percentile_max is not None:
+        current_user.cat_target_percentile_max = payload.cat_target_percentile_max
 
     db.add(current_user)
     db.commit()

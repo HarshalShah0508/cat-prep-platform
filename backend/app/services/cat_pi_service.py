@@ -55,11 +55,14 @@ def _parse_numbered_questions(text: str) -> List[str]:
 def start_session(
     db: Session, user: User, resume: Optional[CatPIResume] = None
 ) -> Tuple[CatPISession, List[PISessionQuestion]]:
+    snapshot_percentile = None
+    if user.cat_target_percentile_min is not None and user.cat_target_percentile_max is not None:
+        snapshot_percentile = (user.cat_target_percentile_min + user.cat_target_percentile_max) / 2
+
     session = CatPISession(
         user_id=user.id,
         resume_id=resume.id if resume else None,
-        target_iims=user.cat_target_iims,
-        target_percentile=user.cat_target_percentile,
+        target_percentile=snapshot_percentile,
         status=CatPIStatus.IN_PROGRESS,
     )
     db.add(session)
@@ -68,7 +71,7 @@ def start_session(
 
     resume_text = resume.extracted_text if resume else None
     prompt = build_cat_pi_batch_prompt(
-        user.cat_target_iims, user.cat_target_percentile, resume_text, count=BASE_QUESTION_COUNT
+        user.cat_target_percentile_min, user.cat_target_percentile_max, resume_text, count=BASE_QUESTION_COUNT
     )
 
     try:
