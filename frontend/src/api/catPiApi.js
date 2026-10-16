@@ -31,3 +31,7 @@ export function getPiSessionResults(id) {
 export function submitPiSessionFeedback(id, payload) {
   return client.post(`${BASE}/${id}/feedback`, payload).then((res) => res.data)
 }
+
+export function submitPiSurvey(id, payload) {
+  return client.post(`${BASE}/${id}/survey`, payload).then((res) => res.data)
+}

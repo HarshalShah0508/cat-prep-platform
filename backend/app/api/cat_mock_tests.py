@@ -5,9 +5,11 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database.database import get_db
+from app.models.cat_mock_test_feedback import CatMockTestFeedback
 from app.models.cat_mock_test_session import CatMockTestSession
 from app.models.enums import CatMockTestStatus, CatTestType
 from app.models.user import User
+from app.schemas.cat_feedback import MockTestFeedbackOut, MockTestFeedbackRequest
 from app.schemas.cat_mock_test import (
     AnswerSubmission,
     MockTestDetailResponse,
@@ -330,6 +332,8 @@ def get_mock_test_results(
         reverse=True,
     )
 
+    feedback = db.query(CatMockTestFeedback).filter(CatMockTestFeedback.session_id == session.id).first()
+
     return MockTestResultsResponse(
         id=session.id,
         status=session.status.value,
@@ -341,4 +345,34 @@ def get_mock_test_results(
         section_breakdown=section_breakdown,
         questions=questions_out,
         weak_topics=weak_topics,
+        feedback=feedback,
     )
+
+
+@router.post("/{session_id}/feedback", response_model=MockTestFeedbackOut)
+def submit_mock_test_feedback(
+    session_id: int,
+    payload: MockTestFeedbackRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    session = _get_owned_session(db, session_id, current_user)
+    if session.status != CatMockTestStatus.SUBMITTED:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Test has not been submitted yet")
+
+    existing = db.query(CatMockTestFeedback).filter(CatMockTestFeedback.session_id == session.id).first()
+    if existing is not None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Feedback already submitted for this test")
+
+    feedback = CatMockTestFeedback(
+        session_id=session.id,
+        user_id=current_user.id,
+        difficulty=payload.difficulty,
+        usefulness_rating=payload.usefulness_rating,
+        issues_text=payload.issues_text,
+        nps_rating=payload.nps_rating,
+    )
+    db.add(feedback)
+    db.commit()
+    db.refresh(feedback)
+    return feedback

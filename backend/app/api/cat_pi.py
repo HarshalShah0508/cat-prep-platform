@@ -3,11 +3,13 @@ from sqlalchemy.orm import Session
 
 from app.core.rate_limiter import limiter
 from app.database.database import get_db
+from app.models.cat_pi_feedback import CatPiFeedback
 from app.models.cat_pi_resume import CatPIResume
 from app.models.cat_pi_session import CatPISession
 from app.models.pi_session_answer import PISessionAnswer
 from app.models.pi_session_question import PISessionQuestion
 from app.models.user import User
+from app.schemas.cat_feedback import PiFeedbackSurveyOut, PiFeedbackSurveyRequest
 from app.schemas.cat_pi import (
     PIAnswerOut,
     PIAnswerRequest,
@@ -215,6 +217,7 @@ def get_pi_session_results(
 ):
     session = _get_owned_session(db, session_id, current_user)
     results = cat_pi_service.get_session_results(db, session)
+    survey = db.query(CatPiFeedback).filter(CatPiFeedback.session_id == session.id).first()
 
     return PISessionResultsResponse(
         session_id=session.id,
@@ -226,6 +229,7 @@ def get_pi_session_results(
         is_finished=session.finished_at is not None,
         user_rating=session.user_rating,
         user_feedback_text=session.user_feedback_text,
+        survey=survey,
     )
 
 
@@ -239,3 +243,30 @@ def submit_pi_feedback(
     session = _get_owned_session(db, session_id, current_user)
     cat_pi_service.submit_session_feedback(db, session, payload.rating, payload.feedback_text)
     return {"saved": True}
+
+
+@router.post("/{session_id}/survey", response_model=PiFeedbackSurveyOut)
+def submit_pi_survey(
+    session_id: int,
+    payload: PiFeedbackSurveyRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    session = _get_owned_session(db, session_id, current_user)
+
+    existing = db.query(CatPiFeedback).filter(CatPiFeedback.session_id == session.id).first()
+    if existing is not None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Feedback already submitted for this session")
+
+    survey = CatPiFeedback(
+        session_id=session.id,
+        user_id=current_user.id,
+        realism_rating=payload.realism_rating,
+        relevance_rating=payload.relevance_rating,
+        issues_text=payload.issues_text,
+        nps_rating=payload.nps_rating,
+    )
+    db.add(survey)
+    db.commit()
+    db.refresh(survey)
+    return survey

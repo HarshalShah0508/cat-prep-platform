@@ -59,3 +59,7 @@ export function submitMockTest(id) {
 export function getMockTestResults(id) {
   return client.get(`${BASE}/${id}/results`).then((res) => res.data)
 }
+
+export function submitMockTestFeedback(id, payload) {
+  return client.post(`${BASE}/${id}/feedback`, payload).then((res) => res.data)
+}

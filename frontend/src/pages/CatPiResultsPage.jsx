@@ -1,9 +1,31 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { getPiSessionResults, submitPiSessionFeedback } from '../api/catPiApi'
-import SessionFeedbackForm from '../components/pi/SessionFeedbackForm'
+import { getPiSessionResults, submitPiSurvey } from '../api/catPiApi'
 import PageHeader from '../components/ui/PageHeader'
 import Pill from '../components/ui/Pill'
+import SurveyForm from '../components/feedback/SurveyForm'
+
+const PI_SURVEY_QUESTIONS = [
+  {
+    key: 'realism_rating',
+    type: 'rating',
+    label: 'How realistic did this feel compared to a real IIM panel interview?',
+    required: true,
+  },
+  {
+    key: 'relevance_rating',
+    type: 'rating',
+    label: 'How relevant were the questions to your background/profile?',
+    required: true,
+  },
+  {
+    key: 'issues_text',
+    type: 'text',
+    label: 'Any issues with voice input, camera, or delivery coaching?',
+    required: false,
+  },
+  { key: 'nps_rating', type: 'rating', label: 'How likely are you to recommend CATPrep to a friend?', required: true },
+]
 
 export default function CatPiResultsPage() {
   const { sessionId } = useParams()
@@ -11,6 +33,7 @@ export default function CatPiResultsPage() {
   const [results, setResults] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [surveySkipped, setSurveySkipped] = useState(false)
 
   useEffect(() => {
     getPiSessionResults(sessionId)
@@ -19,9 +42,9 @@ export default function CatPiResultsPage() {
       .finally(() => setLoading(false))
   }, [sessionId])
 
-  async function handleFeedbackSubmit(payload) {
-    await submitPiSessionFeedback(sessionId, payload)
-    setResults((prev) => ({ ...prev, user_rating: payload.rating, user_feedback_text: payload.feedback_text }))
+  async function handleSurveySubmit(payload) {
+    const saved = await submitPiSurvey(sessionId, payload)
+    setResults((prev) => ({ ...prev, survey: saved }))
   }
 
   if (loading) return <div className="page-loading">Loading results...</div>
@@ -103,12 +126,19 @@ export default function CatPiResultsPage() {
         </div>
       </div>
 
-      {results.user_rating ? (
+      {results.survey ? (
         <div className="ui-card">
           <p className="text-muted">Thanks for your feedback!</p>
         </div>
       ) : (
-        <SessionFeedbackForm onSubmit={handleFeedbackSubmit} />
+        !surveySkipped && (
+          <SurveyForm
+            title="Quick feedback"
+            questions={PI_SURVEY_QUESTIONS}
+            onSubmit={handleSurveySubmit}
+            onSkip={() => setSurveySkipped(true)}
+          />
+        )
       )}
 
       <div className="pi-modal-actions">

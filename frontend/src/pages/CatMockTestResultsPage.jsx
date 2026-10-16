@@ -1,9 +1,27 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { getMockTestResults } from '../api/catMockTestApi'
+import { getMockTestResults, submitMockTestFeedback } from '../api/catMockTestApi'
 import PageHeader from '../components/ui/PageHeader'
 import Pill from '../components/ui/Pill'
 import ListRow from '../components/ui/ListRow'
+import SurveyForm from '../components/feedback/SurveyForm'
+
+const MOCK_TEST_SURVEY_QUESTIONS = [
+  {
+    key: 'difficulty',
+    type: 'radio',
+    label: 'How did the difficulty feel compared to the real CAT exam?',
+    required: true,
+    options: [
+      { value: 'too_easy', label: 'Too easy' },
+      { value: 'about_right', label: 'About right' },
+      { value: 'too_hard', label: 'Too hard' },
+    ],
+  },
+  { key: 'usefulness_rating', type: 'rating', label: 'How useful was this test for your prep?', required: true },
+  { key: 'issues_text', type: 'text', label: 'Any bugs or friction during the test?', required: false },
+  { key: 'nps_rating', type: 'rating', label: 'How likely are you to recommend CATPrep to a friend?', required: true },
+]
 
 const SECTION_ORDER = ['VARC', 'DILR', 'QA']
 const SLOT_LABELS = { slot1: 'Slot 1', slot2: 'Slot 2', slot3: 'Slot 3' }
@@ -92,6 +110,7 @@ export default function CatMockTestResultsPage() {
   const [results, setResults] = useState(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [surveySkipped, setSurveySkipped] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -139,6 +158,11 @@ export default function CatMockTestResultsPage() {
   }
 
   const sectionKeys = SECTION_ORDER.filter((s) => breakdownBySection[s])
+
+  async function handleFeedbackSubmit(payload) {
+    const saved = await submitMockTestFeedback(sessionId, payload)
+    setResults((prev) => ({ ...prev, feedback: saved }))
+  }
 
   return (
     <div className="page-container">
@@ -210,6 +234,21 @@ export default function CatMockTestResultsPage() {
           </div>
         )
       })}
+
+      {results.feedback ? (
+        <div className="ui-card">
+          <p className="text-muted">Thanks for your feedback!</p>
+        </div>
+      ) : (
+        !surveySkipped && (
+          <SurveyForm
+            title="Quick feedback"
+            questions={MOCK_TEST_SURVEY_QUESTIONS}
+            onSubmit={handleFeedbackSubmit}
+            onSkip={() => setSurveySkipped(true)}
+          />
+        )
+      )}
 
       <div className="pi-modal-actions">
         <Link className="btn btn-secondary" to="/dashboard">

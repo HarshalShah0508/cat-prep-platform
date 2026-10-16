@@ -2,6 +2,8 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
+from app.schemas.cat_feedback import PiFeedbackSurveyOut
+
 
 class PIQuestionOut(BaseModel):
     id: int
@@ -86,6 +88,7 @@ class PISessionResultsResponse(BaseModel):
     is_finished: bool
     user_rating: Optional[int] = None
     user_feedback_text: Optional[str] = None
+    survey: Optional[PiFeedbackSurveyOut] = None
 
 
 class PIFeedbackRequest(BaseModel):

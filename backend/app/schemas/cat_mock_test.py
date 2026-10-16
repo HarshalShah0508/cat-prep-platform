@@ -3,6 +3,8 @@ from typing import Dict, List, Optional
 
 from pydantic import BaseModel
 
+from app.schemas.cat_feedback import MockTestFeedbackOut
+
 
 class MockTestStartRequest(BaseModel):
     test_type: str
@@ -146,3 +148,4 @@ class MockTestResultsResponse(BaseModel):
     section_breakdown: List[SectionBreakdown]
     questions: List[ResultQuestionOut]
     weak_topics: List[WeakTopicOut] = []
+    feedback: Optional[MockTestFeedbackOut] = None
