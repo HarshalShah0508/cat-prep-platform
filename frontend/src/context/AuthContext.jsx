@@ -48,6 +48,12 @@ export function AuthProvider({ children }) {
     persist(data)
   }
 
+  async function googleLogin(idToken) {
+    const data = await authApi.googleLogin({ id_token: idToken })
+    persist(data)
+    return data
+  }
+
   function logout() {
     setToken(null)
     setUser(null)
@@ -72,6 +78,7 @@ export function AuthProvider({ children }) {
     login,
     logout,
     completeAuth,
+    googleLogin,
     showLoginPrompt,
     promptLogin,
     dismissLoginPrompt,

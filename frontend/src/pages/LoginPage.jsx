@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { getCatProfile } from '../api/catProfileApi'
 import AuthLayout from '../components/auth/AuthLayout'
+import GoogleLoginButton from '../components/auth/GoogleLoginButton'
+import { redirectAfterAuth } from '../utils/postAuthRedirect'
 
 export default function LoginPage() {
   const { login } = useAuth()
@@ -26,22 +27,19 @@ export default function LoginPage() {
     try {
       await login({ email, password })
       const redirectTo = location.state?.from?.pathname
-      // New accounts have no CAT profile yet — send them to onboarding first.
-      try {
-        const profile = await getCatProfile()
-        if (profile && profile.cat_academic_background) {
-          navigate(redirectTo || '/dashboard')
-        } else {
-          navigate('/onboarding')
-        }
-      } catch {
-        navigate('/onboarding')
-      }
+      await redirectAfterAuth(navigate, redirectTo)
     } catch (err) {
       if (err?.response?.status === 403 && err?.response?.data?.detail === 'EMAIL_NOT_VERIFIED') {
         navigate('/verify-email', {
           state: { email, notice: 'Please verify your email before logging in. Enter the code below to continue.' },
         })
+        return
+      }
+      if (
+        err?.response?.status === 401 &&
+        err?.response?.data?.detail === 'This account was created using Google Sign-In. Please continue with Google.'
+      ) {
+        setError(err.response.data.detail)
         return
       }
       const message =
@@ -106,6 +104,14 @@ export default function LoginPage() {
             {submitting ? 'Logging in...' : 'Log in'}
           </button>
         </form>
+
+        <div className="auth-divider">
+          <span className="auth-divider-line" />
+          <span className="auth-divider-text">OR</span>
+          <span className="auth-divider-line" />
+        </div>
+
+        <GoogleLoginButton onError={setError} />
 
         <p className="auth-switch">
           New here? <Link to="/signup">Create an account</Link>

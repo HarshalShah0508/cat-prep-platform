@@ -11,6 +11,7 @@ bcrypt<4.1
 python-multipart
 slowapi
 httpx
+google-auth
 google-genai
 pymupdf
 python-dotenv

@@ -31,6 +31,10 @@ class ResetPasswordRequest(BaseModel):
     new_password: str
 
 
+class GoogleLoginRequest(BaseModel):
+    id_token: str
+
+
 class MessageResponse(BaseModel):
     message: str
 

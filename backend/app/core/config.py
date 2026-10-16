@@ -50,6 +50,11 @@ class Settings:
 
         self.brevo_sender_name: str = os.environ.get("BREVO_SENDER_NAME", "CAT Prep Platform")
 
+        google_client_id = os.environ.get("GOOGLE_CLIENT_ID")
+        if not google_client_id:
+            raise ValueError("GOOGLE_CLIENT_ID environment variable is required.")
+        self.google_client_id: str = google_client_id
+
         self.jwt_algorithm: str = os.environ.get("JWT_ALGORITHM", "HS256")
         self.jwt_expire_minutes: int = int(os.environ.get("JWT_EXPIRE_MINUTES", "1440"))
         self.frontend_origin: str = os.environ.get("FRONTEND_ORIGIN", "http://localhost:5173")

@@ -8,6 +8,10 @@ export function login({ email, password }) {
   return client.post('/auth/login', { email, password }).then((res) => res.data)
 }
 
+export function googleLogin({ id_token }) {
+  return client.post('/auth/google', { id_token }).then((res) => res.data)
+}
+
 export function verifyEmail({ email, otp_code }) {
   return client.post('/auth/verify-email', { email, otp_code }).then((res) => res.data)
 }

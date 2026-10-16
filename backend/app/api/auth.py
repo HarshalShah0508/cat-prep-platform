@@ -9,6 +9,7 @@ from app.database.database import get_db
 from app.models.user import User
 from app.schemas.auth import (
     ForgotPasswordRequest,
+    GoogleLoginRequest,
     LoginRequest,
     MessageResponse,
     ResendVerificationRequest,
@@ -23,6 +24,7 @@ from app.services.brevo_email_service import (
     send_password_reset_otp_email,
     send_verification_otp_email,
 )
+from app.services.google_oauth_service import authenticate_google_user
 from app.utils.jwt_handler import create_access_token
 from app.utils.otp import OTP_EXPIRY_MINUTES, generate_otp
 from app.utils.security import hash_password, verify_password
@@ -100,12 +102,29 @@ def dev_login(db: Session = Depends(get_db)):
 @limiter.limit("10/minute")
 def login(request: Request, payload: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == payload.email).first()
-    if user is None or not verify_password(payload.password, user.hashed_password):
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
+
+    if user.hashed_password is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="This account was created using Google Sign-In. Please continue with Google.",
+        )
+
+    if not verify_password(payload.password, user.hashed_password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
 
     if not user.is_verified:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="EMAIL_NOT_VERIFIED")
 
+    token = create_access_token(subject=user.email)
+    return TokenResponse(access_token=token, user=user)
+
+
+@router.post("/google", response_model=TokenResponse)
+@limiter.limit("10/minute")
+def google_login(request: Request, payload: GoogleLoginRequest, db: Session = Depends(get_db)):
+    user = authenticate_google_user(payload.id_token, db)
     token = create_access_token(subject=user.email)
     return TokenResponse(access_token=token, user=user)
 

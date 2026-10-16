@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import AuthLayout from '../components/auth/AuthLayout'
+import GoogleLoginButton from '../components/auth/GoogleLoginButton'
 
 export default function SignupPage() {
   const { signup } = useAuth()
@@ -117,6 +118,14 @@ export default function SignupPage() {
             {submitting ? 'Creating account...' : 'Sign up'}
           </button>
         </form>
+
+        <div className="auth-divider">
+          <span className="auth-divider-line" />
+          <span className="auth-divider-text">OR</span>
+          <span className="auth-divider-line" />
+        </div>
+
+        <GoogleLoginButton onError={setError} />
 
         <p className="auth-switch">
           Already have an account? <Link to="/login">Log in</Link>

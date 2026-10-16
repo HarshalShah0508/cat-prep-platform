@@ -24,3 +24,5 @@ services:
         sync: false
       - key: BREVO_SENDER_NAME
         value: "CAT Prep Platform"
+      - key: GOOGLE_CLIENT_ID
+        sync: false

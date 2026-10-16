@@ -9,8 +9,11 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
-    hashed_password = Column(String, nullable=False)
+    hashed_password = Column(String, nullable=True)
     username = Column(String, nullable=False)
+
+    google_id = Column(String, unique=True, nullable=True)
+    auth_provider = Column(String(20), nullable=False, default="local")
 
     is_verified = Column(Boolean, nullable=False, default=False)
     email_verification_otp_hash = Column(String, nullable=True)
