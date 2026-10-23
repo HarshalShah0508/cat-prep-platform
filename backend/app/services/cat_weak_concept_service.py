@@ -50,7 +50,7 @@ def start_drill(db: Session, user: User, weak_concept_id: int) -> CatMockTestSes
             weak_concept.section, weak_concept.concept, DRILL_DIFFICULTY, question_type
         )
         result = gemini_key_manager.generate_content(
-            prompt, purpose=f"weak_concept_drill:{weak_concept.concept}"
+            prompt, purpose=f"weak_concept_drill:{weak_concept.concept}", user_id=user.id
         )
         data = json.loads(result) if isinstance(result, str) else result
 

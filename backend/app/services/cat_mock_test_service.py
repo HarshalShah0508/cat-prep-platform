@@ -267,9 +267,13 @@ def _random_topic(section: str, weak_topics: List[str]) -> str:
     return random.choice(FALLBACK_TOPICS[section])
 
 
-def _generate_ai_question(section: str, topic: str, difficulty: str, question_type: str) -> dict:
+def _generate_ai_question(
+    section: str, topic: str, difficulty: str, question_type: str, user_id: Optional[int] = None
+) -> dict:
     prompt = build_cat_question_prompt(section, topic, difficulty, question_type)
-    result = gemini_key_manager.generate_content(prompt, purpose=f"cat_question:{section}:{topic}")
+    result = gemini_key_manager.generate_content(
+        prompt, purpose=f"cat_question:{section}:{topic}", user_id=user_id
+    )
     return _parse_gemini_json(result)
 
 
@@ -308,7 +312,7 @@ def _is_near_duplicate(candidate_text: str, prior_texts: List[str]) -> bool:
     return False
 
 
-def _verify_ai_question(data: dict) -> bool:
+def _verify_ai_question(data: dict, user_id: Optional[int] = None) -> bool:
     """Independently re-solve the generated question via a separate Gemini call and
     check it against the claimed answer. Not a substitute for a human re-deriving the
     answer by hand - it catches obvious arithmetic/setup slips but a misconception
@@ -317,7 +321,9 @@ def _verify_ai_question(data: dict) -> bool:
         data.get("question_text", ""), data.get("options"), data.get("correct_answer", "")
     )
     try:
-        result = gemini_key_manager.generate_content(prompt, purpose="cat_question_verify")
+        result = gemini_key_manager.generate_content(
+            prompt, purpose="cat_question_verify", user_id=user_id
+        )
         parsed = _parse_gemini_json(result)
         return bool(parsed.get("matches"))
     except Exception:
@@ -358,7 +364,9 @@ def _generate_custom_topic_questions(
                 prompt = build_cat_question_prompt(
                     section, topic, difficulty, question_type, style=style, avoid_questions=avoid
                 )
-                result = gemini_key_manager.generate_content(prompt, purpose=f"cat_custom_question:{topic}")
+                result = gemini_key_manager.generate_content(
+                    prompt, purpose=f"cat_custom_question:{topic}", user_id=user.id
+                )
                 data = _parse_gemini_json(result)
             except Exception:
                 continue
@@ -367,7 +375,7 @@ def _generate_custom_topic_questions(
             if not question_text or _is_near_duplicate(question_text, avoid):
                 avoid = avoid + [question_text] if question_text else avoid
                 continue
-            if not _verify_ai_question(data):
+            if not _verify_ai_question(data, user_id=user.id):
                 continue
 
             data.setdefault("topic", topic)
@@ -498,7 +506,7 @@ def assemble_mock_test(
                     # backoff _generate_custom_topic_questions already uses.
                     time.sleep(5)
                 try:
-                    data = _generate_ai_question(section, topic, difficulty, question_type)
+                    data = _generate_ai_question(section, topic, difficulty, question_type, user_id=user.id)
                     break
                 except Exception:
                     data = None

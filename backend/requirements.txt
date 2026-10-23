@@ -15,3 +15,14 @@ google-auth
 google-genai
 pymupdf
 python-dotenv
+langfuse==4.14.4
+openinference-instrumentation==0.1.57
+openinference-instrumentation-google-genai==1.4.1
+openinference-semantic-conventions==0.1.32
+opentelemetry-api==1.44.0
+opentelemetry-exporter-otlp-proto-common==1.44.0
+opentelemetry-exporter-otlp-proto-http==1.44.0
+opentelemetry-instrumentation==0.65b0
+opentelemetry-proto==1.44.0
+opentelemetry-sdk==1.44.0
+opentelemetry-semantic-conventions==0.65b0

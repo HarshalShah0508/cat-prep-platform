@@ -27,6 +27,22 @@ def decode_access_token(token: str) -> Optional[dict]:
         return None
 
 
+def create_unsubscribe_token(user_id: int) -> str:
+    """No `exp` claim - unsubscribe links must keep working regardless of email age."""
+    return jwt.encode(
+        {"purpose": "unsubscribe", "user_id": user_id},
+        settings.secret_key,
+        algorithm=settings.jwt_algorithm,
+    )
+
+
+def verify_unsubscribe_token(token: str) -> Optional[int]:
+    payload = decode_access_token(token)
+    if payload is None or payload.get("purpose") != "unsubscribe":
+        return None
+    return payload.get("user_id")
+
+
 def get_current_user(
     token: Optional[str] = Depends(oauth2_scheme),
     db: Session = Depends(get_db),

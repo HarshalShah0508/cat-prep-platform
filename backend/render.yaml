@@ -26,3 +26,11 @@ services:
         value: "CAT Prep Platform"
       - key: GOOGLE_CLIENT_ID
         sync: false
+      - key: BACKEND_URL
+        sync: false
+      - key: LANGFUSE_PUBLIC_KEY
+        sync: false
+      - key: LANGFUSE_SECRET_KEY
+        sync: false
+      - key: LANGFUSE_HOST
+        value: "https://cloud.langfuse.com"

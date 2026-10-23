@@ -1,0 +1,36 @@
+name: Reminder Emails
+
+on:
+  workflow_dispatch: {}
+  # Daily at 3:30 UTC = 9:00 AM IST.
+  schedule:
+    - cron: '30 3 * * *'
+
+jobs:
+  send-reminders:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        working-directory: backend
+        run: pip install -r requirements.txt
+
+      - name: Send reminder emails
+        working-directory: backend
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          GEMINI_API_KEYS: ${{ secrets.GEMINI_API_KEYS }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+          BREVO_SENDER_EMAIL: ${{ secrets.BREVO_SENDER_EMAIL }}
+          BREVO_SENDER_NAME: ${{ secrets.BREVO_SENDER_NAME }}
+          FRONTEND_ORIGIN: ${{ secrets.FRONTEND_ORIGIN }}
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
+          REMINDER_EMAIL_ALLOWLIST: ${{ secrets.REMINDER_EMAIL_ALLOWLIST }}
+        run: python -m app.scripts.send_reminder_emails

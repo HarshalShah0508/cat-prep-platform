@@ -1,5 +1,5 @@
 import os
-from typing import List
+from typing import List, Optional
 
 from dotenv import load_dotenv
 
@@ -58,6 +58,11 @@ class Settings:
         self.jwt_algorithm: str = os.environ.get("JWT_ALGORITHM", "HS256")
         self.jwt_expire_minutes: int = int(os.environ.get("JWT_EXPIRE_MINUTES", "1440"))
         self.frontend_origin: str = os.environ.get("FRONTEND_ORIGIN", "http://localhost:5173")
+        self.backend_url: str = os.environ.get("BACKEND_URL", "http://localhost:8000")
+
+        self.langfuse_public_key: Optional[str] = os.environ.get("LANGFUSE_PUBLIC_KEY")
+        self.langfuse_secret_key: Optional[str] = os.environ.get("LANGFUSE_SECRET_KEY")
+        self.langfuse_host: str = os.environ.get("LANGFUSE_HOST", "https://cloud.langfuse.com")
         self.rate_limit_default: str = os.environ.get("RATE_LIMIT_DEFAULT", "60/minute")
         self.rate_limit_storage_uri: str = os.environ.get("RATE_LIMIT_STORAGE_URI", "memory://")
 

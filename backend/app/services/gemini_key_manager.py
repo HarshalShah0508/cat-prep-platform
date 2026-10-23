@@ -1,3 +1,4 @@
+import contextlib
 import logging
 import threading
 import time
@@ -15,6 +16,15 @@ T = TypeVar("T", bound=BaseModel)
 
 COOLDOWN_SECONDS = 60
 DEFAULT_MODEL = "gemini-3.5-flash"
+
+LANGFUSE_ENABLED = bool(settings.langfuse_public_key and settings.langfuse_secret_key)
+
+if LANGFUSE_ENABLED:
+    from openinference.instrumentation.google_genai import GoogleGenAIInstrumentor
+    from langfuse import get_client as get_langfuse_client, propagate_attributes
+
+    GoogleGenAIInstrumentor().instrument()
+    get_langfuse_client()
 
 
 class GeminiKeyManager:
@@ -68,6 +78,7 @@ class GeminiKeyManager:
         purpose: str = "",
         model: str = DEFAULT_MODEL,
         contents: Optional[Any] = None,
+        user_id: Optional[int] = None,
     ) -> Any:
         """Generate content with Gemini, rotating across keys on rate-limit errors.
 
@@ -91,11 +102,21 @@ class GeminiKeyManager:
                         response_schema=response_schema,
                     )
 
-                response = client.models.generate_content(
-                    model=model,
-                    contents=request_contents,
-                    config=config,
+                trace_scope = (
+                    propagate_attributes(
+                        user_id=str(user_id) if user_id is not None else None,
+                        metadata={"purpose": purpose},
+                        tags=[purpose],
+                    )
+                    if LANGFUSE_ENABLED
+                    else contextlib.nullcontext()
                 )
+                with trace_scope:
+                    response = client.models.generate_content(
+                        model=model,
+                        contents=request_contents,
+                        config=config,
+                    )
 
                 if response_schema is not None:
                     parsed = getattr(response, "parsed", None)

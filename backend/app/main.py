@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
@@ -17,8 +19,19 @@ from app.api import (
 )
 from app.core.config import settings
 from app.core.rate_limiter import limiter
+from app.services.gemini_key_manager import LANGFUSE_ENABLED
 
-app = FastAPI(title="CAT Prep Platform API")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+    if LANGFUSE_ENABLED:
+        from langfuse import get_client
+
+        get_client().flush()
+
+
+app = FastAPI(title="CAT Prep Platform API", lifespan=lifespan)
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)

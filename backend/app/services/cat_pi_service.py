@@ -75,7 +75,9 @@ def start_session(
     )
 
     try:
-        result = gemini_key_manager.generate_content(prompt, purpose="cat_pi_batch_questions")
+        result = gemini_key_manager.generate_content(
+            prompt, purpose="cat_pi_batch_questions", user_id=user.id
+        )
         question_texts = _parse_numbered_questions(result)
         if not question_texts:
             raise RuntimeError("Gemini returned no parseable PI questions.")
@@ -104,10 +106,12 @@ def start_session(
     return session, questions
 
 
-def _evaluate_answer(question_text: str, answer_text: str) -> PIAnswerEvaluation:
+def _evaluate_answer(
+    question_text: str, answer_text: str, user_id: Optional[int] = None
+) -> PIAnswerEvaluation:
     prompt = build_cat_pi_evaluation_prompt(question_text, answer_text)
     result = gemini_key_manager.generate_content(
-        prompt, response_schema=PIAnswerEvaluation, purpose="cat_pi_evaluation"
+        prompt, response_schema=PIAnswerEvaluation, purpose="cat_pi_evaluation", user_id=user_id
     )
     if isinstance(result, PIAnswerEvaluation):
         return result
@@ -116,10 +120,12 @@ def _evaluate_answer(question_text: str, answer_text: str) -> PIAnswerEvaluation
     return PIAnswerEvaluation.model_validate(result)
 
 
-def _generate_delivery_feedback(delivery_signals: dict) -> Optional[str]:
+def _generate_delivery_feedback(delivery_signals: dict, user_id: Optional[int] = None) -> Optional[str]:
     try:
         prompt = build_cat_pi_delivery_feedback_prompt(delivery_signals)
-        result = gemini_key_manager.generate_content(prompt, purpose="cat_pi_delivery_feedback")
+        result = gemini_key_manager.generate_content(
+            prompt, purpose="cat_pi_delivery_feedback", user_id=user_id
+        )
         text = result.strip() if isinstance(result, str) else result
         return text or None
     except Exception as exc:  # noqa: BLE001 - delivery feedback is a soft-fail enrichment
@@ -127,10 +133,12 @@ def _generate_delivery_feedback(delivery_signals: dict) -> Optional[str]:
         return None
 
 
-def _generate_model_answer(question_text: str) -> Optional[str]:
+def _generate_model_answer(question_text: str, user_id: Optional[int] = None) -> Optional[str]:
     try:
         prompt = build_cat_pi_model_answer_prompt(question_text)
-        result = gemini_key_manager.generate_content(prompt, purpose="cat_pi_model_answer")
+        result = gemini_key_manager.generate_content(
+            prompt, purpose="cat_pi_model_answer", user_id=user_id
+        )
         text = result.strip() if isinstance(result, str) else result
         return text or None
     except Exception as exc:  # noqa: BLE001 - model answer is a soft-fail enrichment
@@ -148,15 +156,20 @@ def submit_answer(
     evaluation: Optional[PIAnswerEvaluation] = None
     delivery_feedback: Optional[str] = None
     model_answer: Optional[str] = None
+    user_id = pi_question.pi_session.user_id
 
     wave_start = time.time()
     executor = ThreadPoolExecutor(max_workers=3)
     try:
-        eval_future = executor.submit(_evaluate_answer, pi_question.question_text, answer_text)
-        delivery_future = (
-            executor.submit(_generate_delivery_feedback, delivery_signals) if delivery_signals else None
+        eval_future = executor.submit(
+            _evaluate_answer, pi_question.question_text, answer_text, user_id
         )
-        model_answer_future = executor.submit(_generate_model_answer, pi_question.question_text)
+        delivery_future = (
+            executor.submit(_generate_delivery_feedback, delivery_signals, user_id)
+            if delivery_signals
+            else None
+        )
+        model_answer_future = executor.submit(_generate_model_answer, pi_question.question_text, user_id)
 
         try:
             evaluation = eval_future.result()
@@ -233,7 +246,9 @@ def generate_follow_up(db: Session, answer: PISessionAnswer) -> PISessionQuestio
         "improvements": answer.improvements,
     }
     prompt = build_cat_pi_followup_prompt(question.question_text, answer.answer_text, evaluation)
-    result = gemini_key_manager.generate_content(prompt, purpose="cat_pi_followup")
+    result = gemini_key_manager.generate_content(
+        prompt, purpose="cat_pi_followup", user_id=session.user_id
+    )
     follow_up_text = result.strip() if isinstance(result, str) else result
 
     if not follow_up_text:
@@ -311,7 +326,9 @@ def _track_concept(concepts: Dict[str, dict], raw_concept: str) -> Optional[dict
     return concepts[key]
 
 
-def _build_skipped_questions(skipped_main_questions: List[Tuple[int, PISessionQuestion]]) -> List[dict]:
+def _build_skipped_questions(
+    skipped_main_questions: List[Tuple[int, PISessionQuestion]], user_id: Optional[int] = None
+) -> List[dict]:
     if not skipped_main_questions:
         return []
 
@@ -320,7 +337,10 @@ def _build_skipped_questions(skipped_main_questions: List[Tuple[int, PISessionQu
             [question.question_text for _, question in skipped_main_questions]
         )
         result = gemini_key_manager.generate_content(
-            prompt, response_schema=SkippedTopicsResponse, purpose="cat_pi_skipped_topics"
+            prompt,
+            response_schema=SkippedTopicsResponse,
+            purpose="cat_pi_skipped_topics",
+            user_id=user_id,
         )
         if isinstance(result, SkippedTopicsResponse):
             topics = result.topics
@@ -348,7 +368,7 @@ def get_session_results(db: Session, session: CatPISession) -> dict:
     skipped_main_questions = [
         (index + 1, question) for index, question in enumerate(main_questions) if question.answer is None
     ]
-    skipped_questions = _build_skipped_questions(skipped_main_questions)
+    skipped_questions = _build_skipped_questions(skipped_main_questions, user_id=session.user_id)
 
     answered_questions = [q for q in questions if q.answer is not None]
 

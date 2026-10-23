@@ -1,7 +1,8 @@
 import logging
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
 from app.core.rate_limiter import limiter
@@ -25,7 +26,7 @@ from app.services.brevo_email_service import (
     send_verification_otp_email,
 )
 from app.services.google_oauth_service import authenticate_google_user
-from app.utils.jwt_handler import create_access_token
+from app.utils.jwt_handler import create_access_token, verify_unsubscribe_token
 from app.utils.otp import OTP_EXPIRY_MINUTES, generate_otp
 from app.utils.security import hash_password, verify_password
 
@@ -94,6 +95,10 @@ def dev_login(db: Session = Depends(get_db)):
         db.commit()
         db.refresh(user)
 
+    user.last_login_at = datetime.now(timezone.utc)
+    db.add(user)
+    db.commit()
+
     token = create_access_token(subject=user.email)
     return TokenResponse(access_token=token, user=user)
 
@@ -117,6 +122,10 @@ def login(request: Request, payload: LoginRequest, db: Session = Depends(get_db)
     if not user.is_verified:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="EMAIL_NOT_VERIFIED")
 
+    user.last_login_at = datetime.now(timezone.utc)
+    db.add(user)
+    db.commit()
+
     token = create_access_token(subject=user.email)
     return TokenResponse(access_token=token, user=user)
 
@@ -125,6 +134,9 @@ def login(request: Request, payload: LoginRequest, db: Session = Depends(get_db)
 @limiter.limit("10/minute")
 def google_login(request: Request, payload: GoogleLoginRequest, db: Session = Depends(get_db)):
     user = authenticate_google_user(payload.id_token, db)
+    user.last_login_at = datetime.now(timezone.utc)
+    db.add(user)
+    db.commit()
     token = create_access_token(subject=user.email)
     return TokenResponse(access_token=token, user=user)
 
@@ -154,6 +166,34 @@ def verify_email(request: Request, payload: VerifyEmailRequest, db: Session = De
 
     token = create_access_token(subject=user.email)
     return TokenResponse(access_token=token, user=user)
+
+
+def _apply_unsubscribe(token: str, db: Session) -> None:
+    user_id = verify_unsubscribe_token(token)
+    if user_id is not None:
+        user = db.query(User).filter(User.id == user_id).first()
+        if user is not None:
+            user.email_opt_out = True
+            db.add(user)
+            db.commit()
+
+
+@router.get("/unsubscribe", response_class=HTMLResponse)
+def unsubscribe(token: str = Query(...), db: Session = Depends(get_db)):
+    _apply_unsubscribe(token, db)
+    return (
+        "<html><body style='font-family:sans-serif;text-align:center;padding:60px 20px;'>"
+        "<h2>You've been unsubscribed</h2>"
+        "<p>You won't receive reminder emails from CAT Prep Platform anymore.</p>"
+        "</body></html>"
+    )
+
+
+@router.post("/unsubscribe")
+def unsubscribe_one_click(token: str = Query(...), db: Session = Depends(get_db)):
+    """RFC 8058 one-click target - what Gmail/Yahoo's built-in Unsubscribe button calls."""
+    _apply_unsubscribe(token, db)
+    return {"status": "unsubscribed"}
 
 
 @router.post("/resend-verification", response_model=MessageResponse)

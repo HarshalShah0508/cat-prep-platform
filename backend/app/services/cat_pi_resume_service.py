@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import pymupdf
 from google.genai import types
@@ -198,7 +198,7 @@ def extract_text_from_pdf(pdf_bytes: bytes) -> str:
     return extracted_text
 
 
-def extract_text_via_gemini_ocr(pdf_bytes: bytes) -> str:
+def extract_text_via_gemini_ocr(pdf_bytes: bytes, user_id: Optional[int] = None) -> str:
     """Fallback for scanned/image-only PDFs with no usable text layer."""
     result = gemini_key_manager.generate_content(
         contents=[
@@ -206,6 +206,7 @@ def extract_text_via_gemini_ocr(pdf_bytes: bytes) -> str:
             RESUME_OCR_PROMPT,
         ],
         purpose="cat_pi_resume_ocr",
+        user_id=user_id,
     )
     text = (result or "").strip()
     if not text:
@@ -213,15 +214,15 @@ def extract_text_via_gemini_ocr(pdf_bytes: bytes) -> str:
     return text
 
 
-def extract_resume_text(pdf_bytes: bytes) -> str:
+def extract_resume_text(pdf_bytes: bytes, user_id: Optional[int] = None) -> str:
     text = extract_text_from_pdf(pdf_bytes)
     if text.strip():
         return text
-    return extract_text_via_gemini_ocr(pdf_bytes)
+    return extract_text_via_gemini_ocr(pdf_bytes, user_id=user_id)
 
 
 def create_resume(db: Session, user: User, filename: str, pdf_bytes: bytes) -> CatPIResume:
-    extracted_text = extract_resume_text(pdf_bytes)
+    extracted_text = extract_resume_text(pdf_bytes, user_id=user.id)
     resume = CatPIResume(
         user_id=user.id,
         original_filename=filename,
