@@ -11,6 +11,7 @@ import CatMockTestSetupPage from './pages/CatMockTestSetupPage'
 import CatPyqSetupPage from './pages/CatPyqSetupPage'
 import CatMockTestSessionPage from './pages/CatMockTestSessionPage'
 import CatMockTestResultsPage from './pages/CatMockTestResultsPage'
+import CatMockTestHistoryPage from './pages/CatMockTestHistoryPage'
 import CatPiSetupPage from './pages/CatPiSetupPage'
 import CatPiSessionPage from './pages/CatPiSessionPage'
 import CatPiResultsPage from './pages/CatPiResultsPage'
@@ -40,6 +41,14 @@ export default function AppRouter() {
         element={
           <ProtectedRoute>
             <CatMockTestSetupPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/mock-tests"
+        element={
+          <ProtectedRoute>
+            <CatMockTestHistoryPage />
           </ProtectedRoute>
         }
       />

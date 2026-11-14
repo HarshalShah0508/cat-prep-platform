@@ -75,14 +75,22 @@ export default function CatMockTestSessionPage() {
     const el = document.documentElement
     const request = el.requestFullscreen || el.webkitRequestFullscreen
     if (request) {
-      request.call(el).catch(() => {})
+      // Safari's webkitRequestFullscreen returns undefined, not a Promise - calling
+      // .catch() on it unconditionally throws and silently kills fullscreen on Safari.
+      const result = request.call(el)
+      if (result && typeof result.catch === 'function') {
+        result.catch(() => {})
+      }
     }
   }
 
   function exitFullscreen() {
     const exit = document.exitFullscreen || document.webkitExitFullscreen
     if ((document.fullscreenElement || document.webkitFullscreenElement) && exit) {
-      exit.call(document).catch(() => {})
+      const result = exit.call(document)
+      if (result && typeof result.catch === 'function') {
+        result.catch(() => {})
+      }
     }
   }
 

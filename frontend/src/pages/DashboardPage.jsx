@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { getDashboard } from '../api/dashboardApi'
 import { getCatProfile } from '../api/catProfileApi'
 import { useAuth } from '../context/AuthContext'
@@ -114,7 +114,13 @@ export default function DashboardPage() {
                   Last result: <strong>{data.latest_mock_result.raw_score}</strong> raw score,{' '}
                   <strong>{data.latest_mock_result.percentile_estimate}</strong> percentile
                 </p>
-                <p className="text-muted">{formatDate(data.latest_mock_result.created_at)}</p>
+                <p className="text-muted">
+                  <Link to={`/mock-tests/${data.latest_mock_result.session_id}/results`}>
+                    View this result →
+                  </Link>
+                  {' · '}
+                  <Link to="/mock-tests">View all past results →</Link>
+                </p>
               </div>
             ) : (
               <p className="text-muted">No mock tests taken yet.</p>
