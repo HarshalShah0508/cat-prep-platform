@@ -47,12 +47,13 @@ export function CatMockTestProvider({ children }) {
           pollRef.current = null
         }
       } catch (err) {
+        // A transient failure (a dropped DB connection, a blip in the network) must not
+        // permanently kill polling - that previously left the client stuck showing
+        // "Generating..." forever with no way to recover short of a full page refresh.
+        // Keep retrying on the existing interval; only a real status transition (or
+        // unmount) should stop it.
         if (cancelled) return
         setError(err)
-        if (pollRef.current) {
-          clearInterval(pollRef.current)
-          pollRef.current = null
-        }
       }
     }
 
