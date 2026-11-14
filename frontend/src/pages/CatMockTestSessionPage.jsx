@@ -419,6 +419,23 @@ export default function CatMockTestSessionPage() {
     )
   }
 
+  if (effectiveStatus === 'failed') {
+    return (
+      <div className="page-container">
+        <div className="card generating-card">
+          <h1>Couldn't generate this test</h1>
+          <p className="text-muted">
+            Question generation failed, possibly due to a temporary AI provider issue. Please
+            start a new test.
+          </p>
+          <button type="button" className="btn btn-primary" onClick={() => navigate('/mock-tests/new')}>
+            Back to test setup
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   if (effectiveStatus === 'generating' || (!test && effectiveStatus !== 'ready' && effectiveStatus !== 'in_progress')) {
     return (
       <div className="page-container">

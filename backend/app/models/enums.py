@@ -37,6 +37,7 @@ class CatMockTestStatus(str, enum.Enum):
     READY = "ready"
     IN_PROGRESS = "in_progress"
     SUBMITTED = "submitted"
+    FAILED = "failed"
 
 
 class CatWeakConceptStatus(str, enum.Enum):

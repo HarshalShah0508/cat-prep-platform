@@ -2,6 +2,7 @@ import contextlib
 import logging
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 from typing import Any, Optional, Type, TypeVar
 
 from google import genai
@@ -16,6 +17,16 @@ T = TypeVar("T", bound=BaseModel)
 
 COOLDOWN_SECONDS = 60
 DEFAULT_MODEL = "gemini-3.5-flash"
+
+# Backstop above the client's own http_options timeout (60s): in practice a wedged
+# connection has been observed to hang well past that configured timeout with no
+# exception ever raised (the underlying client doesn't always honor it). Running each
+# call on a worker thread and giving up after this deadline means a wedged call fails
+# fast and moves on to the next key/attempt instead of blocking the caller - e.g. a
+# background mock-test generation job - forever. The wedged thread itself is abandoned
+# (Python has no way to forcibly kill a blocked thread) rather than joined.
+HARD_CALL_TIMEOUT_SECONDS = 75
+_call_executor = ThreadPoolExecutor(max_workers=16, thread_name_prefix="gemini-call")
 
 LANGFUSE_ENABLED = bool(settings.langfuse_public_key and settings.langfuse_secret_key)
 
@@ -112,11 +123,23 @@ class GeminiKeyManager:
                     else contextlib.nullcontext()
                 )
                 with trace_scope:
-                    response = client.models.generate_content(
+                    future = _call_executor.submit(
+                        client.models.generate_content,
                         model=model,
                         contents=request_contents,
                         config=config,
                     )
+                    try:
+                        response = future.result(timeout=HARD_CALL_TIMEOUT_SECONDS)
+                    except FutureTimeoutError as exc:
+                        # The call thread is abandoned here - it may still complete (or
+                        # stay wedged) in the background, but the caller must not wait
+                        # on it. Phrased to match the DEADLINE_EXCEEDED branch below so
+                        # it cools this key down and rotates to the next one.
+                        raise RuntimeError(
+                            f"Gemini call exceeded local {HARD_CALL_TIMEOUT_SECONDS}s hard "
+                            "timeout (DEADLINE_EXCEEDED, key possibly wedged)"
+                        ) from exc
 
                 if response_schema is not None:
                     parsed = getattr(response, "parsed", None)
@@ -130,11 +153,13 @@ class GeminiKeyManager:
                 message = str(exc)
                 status_code = getattr(exc, "code", None) or getattr(exc, "status_code", None)
                 is_rate_limited = (
-                    status_code in (429, 503)
+                    status_code in (429, 503, 504)
                     or "429" in message
                     or "503" in message
+                    or "504" in message
                     or "RESOURCE_EXHAUSTED" in message
                     or "UNAVAILABLE" in message
+                    or "DEADLINE_EXCEEDED" in message
                 )
                 if is_rate_limited:
                     logger.warning("Gemini key rate-limited during '%s': %s", purpose, message)

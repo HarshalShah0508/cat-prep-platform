@@ -38,9 +38,15 @@ def run(session_id: int) -> None:
         logger.exception("Mock test generation failed for session_id=%s", session_id)
         db.rollback()
         session = db.query(CatMockTestSession).filter(CatMockTestSession.id == session_id).first()
-        if session is not None and session.status != CatMockTestStatus.READY:
-            # Leave status=generating so the client can retry/poll; the failure is logged above.
-            session.status = CatMockTestStatus.GENERATING
+        if session is not None and session.status not in (
+            CatMockTestStatus.READY,
+            CatMockTestStatus.FAILED,
+        ):
+            # Previously left this as GENERATING so the client could "retry/poll" - but
+            # nothing ever actually retried it, so it just stayed on the loading screen
+            # forever. FAILED gives the frontend a real terminal state to show an error
+            # and let the user start a new test instead.
+            session.status = CatMockTestStatus.FAILED
             db.add(session)
             db.commit()
     finally:

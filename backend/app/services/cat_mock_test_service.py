@@ -537,7 +537,12 @@ def assemble_mock_test(
             )
             order_index += 1
 
-    session.status = CatMockTestStatus.READY
+    # order_index only ever increments when a question is actually inserted above - if it's
+    # still 0, every generation attempt for every section failed (e.g. Gemini was
+    # unreachable/timing out throughout). Flipping to READY here would hand the user an
+    # empty, unplayable test with no visible error - fail the session instead so the
+    # frontend can show a real error and let them retry.
+    session.status = CatMockTestStatus.READY if order_index > 0 else CatMockTestStatus.FAILED
     db.add(session)
     db.commit()
     db.refresh(session)
